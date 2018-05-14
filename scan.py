@@ -5,7 +5,7 @@ import os
 import sys
 
 def dot2intIP(ip):
-	ip = (ip[0]<<24) + (ip[1]<<16) + (ip[2]<<8) + ip[3]
+	ip = (int(ip[0])<<24) + (int(ip[1])<<16) + (int(ip[2])<<8) + int(ip[3])
 	return ip
 
 def int2dotIP(intIP):
@@ -43,8 +43,10 @@ def resolvRangeIP(ipL):
 
 	return dot2intIP(minip),dot2intIP(maxip)
 
-def revolvRangeIPL(ipL):
+def resolvRangeIPL(ipL):
 	minip,maxip = ipL.split('-')
+	minip = minip.split('.')
+	maxip = maxip.split('.')
 	return dot2intIP(minip),dot2intIP(maxip)
 
 def resolvCIDR(ipL):
@@ -70,9 +72,9 @@ def resolvCIDR(ipL):
 		exit(0)
 
 def resolvIP(iprange):
-	if iprange.find('-') != -1 and (iprange.find('-') != iprange.find('-',-1) or iprange.find('-')-iprange.find('.',-1)<4):
+	if iprange.find('-') != -1 and (iprange.find('-') != iprange.rfind('-') or iprange.rfind('.')-iprange.find('-')<4):
 		start,end = resolvRangeIP(iprange)
-	elif iprange.find('-') !=-1 and iprange.find('-') == iprange.find('-',-1):
+	elif iprange.find('-') !=-1 and iprange.find('-') == iprange.rfind('-'):
 		start,end = resolvRangeIPL(iprange)
 	elif iprange.find('/') != -1:
 		start,end = resolvCIDR(iprange)
@@ -116,7 +118,7 @@ def main():
 	for ip in resolvIP('10.108.39.200/22'):
 		for port in portList:
 			banner = retBanner(ip,port)
-			if banner!='No banner--time out':
+			if banner !='No banner--time out':
 				print('[+] '+str(ip)+': '+str(port)+'\tBanners:'+banner)
 				checkVulns(banner,filename)
 
