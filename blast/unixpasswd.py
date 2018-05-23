@@ -3,7 +3,7 @@
 
 import crypt
 
-def blastUnixPasswd(user,method,salt,passwd,dic='dictionary.txt'):
+def blastUnixPasswd(user,method,salt,passwd,dic='../data/dictionary.txt'):
     hashinfo = '$' + method + '$'
     hashinfo += salt+'$' if salt else ''
     hashinfo += passwd
