@@ -1,4 +1,6 @@
 #!/usr/bin/env python3
+#coding=utf-8
+__author__="riverchu"
 
 import socket
 import os
@@ -101,7 +103,7 @@ def checkVulns(banner,filename):
 		if line.strip('\n') in  banner:
 			print("[+]Server is vulnerable: " + banner.strip('\n'))
 
-def main():
+def scan():
 	if len(sys.argv) == 2:
 		filename = sys.argv[1]
 		if not os.path.isfile(filename):
@@ -123,4 +125,4 @@ def main():
 				checkVulns(banner,filename)
 
 if __name__ == "__main__":
-	main()
+	scan()
