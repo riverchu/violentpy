@@ -16,16 +16,13 @@ THREADLOCK = BoundedSemaphore(value=MAX_THREAD)
 
 def extract_file(zFile,passwd):
     global PASSWD
-    f = None
     try:
         zFile.extractall(path=EXTRACT_PATH,pwd=passwd)
         PASSWD = passwd
-        f = True
     except Exception as e:
-        f = None
+        pass
     finally:
         THREADLOCK.release()
-        return f
 
 def crack_zip(filePath='evil.zip',dicName="dictionary.txt"):
     parser = optparse.OptionParser("usage%prog "+"-f <zipfile> -d <dictionary>")
