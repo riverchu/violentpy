@@ -2,24 +2,30 @@
 # coding=utf-8
 __author__="riverchu"
 
-import time
 import zipfile
 import optparse
-from threading import Thread
+from threading import *
 
 DIC_PATH='../data/'
 EXTRACT_PATH='./extract_here'
 
 PASSWD = ''
 
+MAX_THREAD = 10
+THREADLOCK = BoundedSemaphore(value=MAX_THREAD)
+
 def extract_file(zFile,passwd):
     global PASSWD
+    f = None
     try:
         zFile.extractall(path=EXTRACT_PATH,pwd=passwd)
         PASSWD = passwd
-        return True
+        f = True
     except Exception as e:
-        return None
+        f = None
+    finally:
+        THREADLOCK.release()
+        return f
 
 def crack_zip(filePath='evil.zip',dicName="dictionary.txt"):
     parser = optparse.OptionParser("usage%prog "+"-f <zipfile> -d <dictionary>")
@@ -36,14 +42,19 @@ def crack_zip(filePath='evil.zip',dicName="dictionary.txt"):
     global PASSWD
     zFile = zipfile.ZipFile(filePath)
     passFile = open(DIC_PATH+dicName)
+    threads = []
 
     for line in passFile.readlines():
+        THREADLOCK.acquire()
         passwd = bytes(line.strip('\n'),encoding="utf8")
         t = Thread(target=extract_file,args=(zFile,passwd))
+        threads.append(t)
+        t.setDaemon(True)
         t.start()
 
-    while not PASSWD:
-        time.sleep(1)
+    for t in threads:
+        if PASSWD: break
+        t.join()
 
     PASSWD = str(PASSWD,encoding="utf8")
     print("[+] Found "+filePath+"'s password : "+PASSWD)
