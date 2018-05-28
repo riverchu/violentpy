@@ -4,24 +4,33 @@ __author__="riverchu"
 
 import pexpect
 
-LOGIN =['Last login']
-SHELL = 'bash'
+LOGIN ='Last login'
+SHELL ='bash'
 PROMPT=['# ','>>> ','> ','\$ ','$ ']
+TIMEOUT=5
 
 def send_command(child,cmd):
     child.sendline(cmd)
     child.expect(PROMPT)
-    response = str(child.before,encoding="utf-8")[len(cmd)+2:]
-    print(response,end='')
-    return input()
+    return str(child.before,encoding="utf-8")[len(cmd)+2:]
 
 def trans_passwd(child,passwd):
     try:
         child.sendline(passwd)
-        child.expect(LOGIN)
-        child.sendline(SHELL)
-        child.expect(PROMPT)
-        return child
+        ret = child.expect([pexpect.TIMEOUT,LOGIN,'[P|p]assword'])
+        if ret==0:
+            print('[-] Time out.')
+            return None
+        elif ret==1:
+            child.sendline(SHELL)
+            child.expect(PROMPT)
+            return child
+        elif ret==2:
+            print('[-] Wrong password.')
+            return None
+        else:
+            print('[-] Unknown error.')
+            return None
     except Exception as e:
         print('[-]',e)
         return None
@@ -31,13 +40,13 @@ def login_ssh(child,user,passwd):
     ret = child.expect([pexpect.TIMEOUT, ssh_newkey,'[P|p]assword:'])
     if ret==0:
         print("[-] Error Connecting")
-        return
+        return None
     elif ret==1:
         child.sendline('yes')
         ret = child.expect([pexpect.TIMEOUT,'[P|p]assword'])
         if ret==0:
             print("[-] Error Connecting")
-            return
+            return None
         else:
             return trans_passwd(child,passwd)
     elif ret==2:
@@ -46,11 +55,10 @@ def login_ssh(child,user,passwd):
 def connect(user,host,passwd):
     sshConn='ssh '+user+'@'+host
     try:
-        child = pexpect.spawn(sshConn)
+        child = pexpect.spawn(sshConn,timeout=TIMEOUT)
         #fout = open('mylog.txt','wb')
         #child.logfile = fout
-        login_ssh(child,user,passwd)
-        return child
+        return login_ssh(child,user,passwd)
     except Exception as e:
         print('[-]',e)
 
@@ -60,9 +68,13 @@ def start_ssh():
     passwd = 'indigosrpi'
     child = connect(user,host,passwd)
 
-    response = send_command(child,'cat /etc/shadow|grep root')
-    while response and response!="exit":
-        response = send_command(child,response)
+    if not child: exit(0)
+
+    command = 'cat /etc/shadow|grep root'
+    while command and command!="exit":
+        response = send_command(child,command)
+        print(response,end='')
+        command = input()
 
 if __name__=="__main__":
     start_ssh()
