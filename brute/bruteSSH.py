@@ -104,7 +104,7 @@ def ssh_pass(host,user,passwdFile):
             break
         CONNECTION_LOCK.acquire()
         passwd = line.strip('\r').strip('\n')
-        print('[*] Testing: '+str(passwd))
+        #print('[*] Testing: '+str(passwd))
         t = Thread(target=connect_with_passwd, args=(host,user,passwd,True))
         t.setDaemon(True)
         threads.append(t)
