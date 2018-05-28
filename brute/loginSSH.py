@@ -3,18 +3,26 @@
 __author__="riverchu"
 
 import pexpect
+from pexpect import pxssh
+import optparse
 
 LOGIN ='Last login'
 SHELL ='bash'
 PROMPT=['# ','>>> ','> ','\$ ','$ ']
 TIMEOUT=5
 
-def send_command(child,cmd):
+def send_command_pexpect(child,cmd):
     child.sendline(cmd)
     child.expect(PROMPT)
     return str(child.before,encoding="utf-8")[len(cmd)+2:]
 
-def trans_passwd(child,passwd):
+def send_command(s,cmd):
+    s.sendline(cmd)
+    s.prompt()
+    ret = str(s.before,encoding="utf-8").split('\n',1)[1]#[len(cmd):]
+    return ret
+
+def trans_passwd_pexpect(child,passwd):
     try:
         child.sendline(passwd)
         ret = child.expect([pexpect.TIMEOUT,LOGIN,'[P|p]assword'])
@@ -35,7 +43,7 @@ def trans_passwd(child,passwd):
         print('[-]',e)
         return None
 
-def login_ssh(child,user,passwd):
+def login_ssh_pexpect(child,user,passwd):
     ssh_newkey='Are you sure you want to continue connecting'
     ret = child.expect([pexpect.TIMEOUT, ssh_newkey,'[P|p]assword:'])
     if ret==0:
@@ -48,33 +56,80 @@ def login_ssh(child,user,passwd):
             print("[-] Error Connecting")
             return None
         else:
-            return trans_passwd(child,passwd)
+            return trans_passwd_pexpect(child,passwd)
     elif ret==2:
-        return trans_passwd(child,passwd)
+        return trans_passwd_pexpect(child,passwd)
 
-def connect(user,host,passwd):
+def com_ssh_pexpect(child,command='whoami && pwd'):
+    try:
+        while command!="exit":
+            response = send_command_pexpect(child,command)
+            print(response,end='')
+            command = input()
+    except KeyboardInterrupt as e:
+        print('\n[-] Error: KeyboardInterrupt')
+    except Exception as e:
+        print('[-] Error:',e)
+    finally:
+        child.close()
+
+def com_ssh(s,command='whoami && pwd'):
+    try:
+        while command!="exit":
+            response = send_command(s,command)
+            print(response,end='')
+            command = input()
+    except KeyboardInterrupt as e:
+        print('\n[-] Error: KeyboardInterrupt')
+    except Exception as e:
+        print('[-] Error:',e)
+    finally:
+        s.logout()
+        s.close()
+
+def connect_pexpect(host,user,passwd):
     sshConn='ssh '+user+'@'+host
     try:
         child = pexpect.spawn(sshConn,timeout=TIMEOUT)
         #fout = open('mylog.txt','wb')
         #child.logfile = fout
-        return login_ssh(child,user,passwd)
+        return login_ssh_pexpect(child,user,passwd)
     except Exception as e:
-        print('[-]',e)
+        print('[-] Error:',e)
 
-def start_ssh():
-    host = '10.108.36.71'
-    user = 'root'
-    passwd = 'indigosrpi'
-    child = connect(user,host,passwd)
+def connect(host,user,passwd):
+    try:
+        s = pxssh.pxssh()
+        s.login(host,user,passwd)
+        return s
+    except Exception as e:
+        print('[-] Error:',e)
 
-    if not child: exit(0)
+def start_ssh(host,user,passwd):
+    try:
+        child = connect(host,user,passwd)
+        if not child:
+            print('[-] Connect Failed.')
+            return
+        com_ssh(child)
+    except Exception as e:
+        print('[-] Error:',e)
 
-    command = 'cat /etc/shadow|grep root'
-    while command and command!="exit":
-        response = send_command(child,command)
-        print(response,end='')
-        command = input()
+def main():
+    parser = optparse.OptionParser('usage %prog '+'-H <target host> -u <user> -p <password list>')
+    parser.add_option('-H',dest = 'tgtHost',type='string',help='specify target host')
+    parser.add_option('-u',dest = 'user',type='string',help='specify the user')
+    parser.add_option('-p',dest = 'passwd',type='string',help='specify password')
+    (options,args)=parser.parse_args()
+    host = options.tgtHost
+    user = options.user
+    passwd = options.passwd
+
+    if host==None or passwd==None or user==None:
+        print(parser.usage)
+        exit(0)
+
+    start_ssh(host,user,passwd)
 
 if __name__=="__main__":
-    start_ssh()
+    main()
