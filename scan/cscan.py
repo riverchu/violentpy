@@ -29,10 +29,12 @@ def ret_banner(tgtHost,tgtPort):
         s = socket(AF_INET,SOCK_STREAM)
         s.connect((tgtHost,tgtPort))
         s.send(bytes(SAY_HELLO,encoding="utf8"))
-        banner = s.recv(256)
+        banner = s.recv(256).decode().strip()
         s.close()
-        return str(banner,encoding="utf8").strip()
+        return banner
     except:
+        #if banner:
+        #    banner = str(banner,encoding="utf8").strip()
         return banner
 
 def output_result(tgtHost,tgtPort,string,typeStr):
