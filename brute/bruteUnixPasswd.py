@@ -17,6 +17,8 @@ def blastUnixPasswd(user,method,salt,passwd,*,dic='../data/dictionary.txt'):
         return
 
 def format_hashinfo(line):
+    if not line:return
+
     if ':' in line:
         info = line.split(':')
         user = info[0].strip()
@@ -37,9 +39,12 @@ def format_hashinfo(line):
 
 def crack_unix_passwd(line,dic):
     formatHashInfo = format_hashinfo(line)
-    ret = blastUnixPasswd(*formatHashInfo,dic=dic)
-    if ret :
-        return formatHashInfo[0],ret
+    if formatHashInfo:
+        ret = blastUnixPasswd(*formatHashInfo,dic=dic)
+        if ret :
+            return formatHashInfo[0],ret
+    else:
+        return 'BanUser',None
 
 def getUnixPasswdFile(filePath=None):
     if not filePath:
