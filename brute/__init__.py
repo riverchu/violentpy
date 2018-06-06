@@ -1,2 +1,2 @@
-__author__="riverchu"
+__author__ = "riverchu"
 

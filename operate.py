@@ -8,19 +8,19 @@ from brute import bruteSSH, loginSSH, bruteUnixPasswd
 
 DATA_PATH = '/root/h/data/'
 SSH_DICTIONARY = DATA_PATH+'dictionary/common/online_brute.txt'
-PASS_DICTIONARY = DATA_PATH+'dictionary/common/top100thousand.txt'
+PASS_DICTIONARY = DATA_PATH+'dictionary/common/online_brute.txt'
 CHICKEN_PATH = DATA_PATH+'hData/chicken/'
-CHICKEN_FILE = 'chicken_subnet_10.210.txt'
+CHICKEN_FILE = 'chicken_subnet_10.108.36.txt'
 
 
 # 破解
 def brute(host, user, dictionary, *, connections):
     target = (host, user)
     dic = dict()
-    dic['passwdFile'] = dictionary
-    dic['maxConnection'] = connections
+    dic['passwd_file'] = dictionary
+    dic['max_connection'] = connections
 
-    brute_ret = bruteSSH.bruteSSH(*target, **dic)
+    brute_ret = bruteSSH.brute_ssh(*target, **dic)
     return brute_ret
 
 
@@ -80,4 +80,3 @@ if __name__ == '__main__':
     mess = json.load(open(CHICKEN_PATH + CHICKEN_FILE, 'r'))
     # mess = read_files(CHICKEN_FILE)
     print(json.dumps(mess, indent=4))
-

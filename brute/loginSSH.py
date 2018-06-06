@@ -1,14 +1,16 @@
 #!/usr/bin/env python3
 # coding=utf-8
-__author__="riverchu"
+__author__ = "riverchu"
+
 
 import pexpect
 from pexpect import pxssh
+
 import optparse
 
 LOGIN = 'Last login'
 SHELL = 'bash'
-PROMPT = ['# ','>>> ','> ','\$ ','$ ']
+PROMPT = ['# ', '>>> ', '> ', '\$ ', '$ ']
 TIMEOUT = 5
 
 
@@ -52,62 +54,62 @@ def trans_passwd_pexpect(child, passwd):
         return None
 
 
-def login_ssh_pexpect(child,user,passwd):
-    ssh_newkey='Are you sure you want to continue connecting'
-    ret = child.expect([pexpect.TIMEOUT, ssh_newkey,'[P|p]assword:'])
-    if ret==0:
+def login_ssh_pexpect(child, passwd):
+    ssh_newkey = 'Are you sure you want to continue connecting'
+    ret = child.expect([pexpect.TIMEOUT, ssh_newkey, '[P|p]assword:'])
+    if ret == 0:
         print("[-] Error Connecting")
         return None
-    elif ret==1:
+    elif ret == 1:
         child.sendline('yes')
-        ret = child.expect([pexpect.TIMEOUT,'[P|p]assword'])
-        if ret==0:
+        ret = child.expect([pexpect.TIMEOUT, '[P|p]assword'])
+        if ret == 0:
             print("[-] Error Connecting")
             return None
         else:
-            return trans_passwd_pexpect(child,passwd)
-    elif ret==2:
-        return trans_passwd_pexpect(child,passwd)
+            return trans_passwd_pexpect(child, passwd)
+    elif ret == 2:
+        return trans_passwd_pexpect(child, passwd)
 
 
-def com_ssh_pexpect(child,command='whoami && pwd'):
+def com_ssh_pexpect(child, command='whoami && pwd'):
     try:
-        while command!="exit":
-            response = send_command_pexpect(child,command)
-            print(response,end='')
+        while command != "exit":
+            response = send_command_pexpect(child, command)
+            print(response, end='')
             command = input()
     except KeyboardInterrupt as e:
-        print('\n[-] Error: KeyboardInterrupt')
+        print('\n[-] Error: KeyboardInterrupt', e)
     except Exception as e:
-        print('[-] Error:',e)
+        print('[-] Error:', e)
     finally:
         close_connection(child)
 
 
-def com_ssh_realtime(s,command='cat /etc/shadow|grep root'):
+def com_ssh_realtime(s, command='cat /etc/shadow|grep root'):
     try:
-        while command!="exit":
-            response = send_command(s,command)
-            print(response,end='')
+        while command != "exit":
+            response = send_command(s, command)
+            print(response, end='')
             command = input()
     except KeyboardInterrupt as e:
-        print('\n[-] Error: KeyboardInterrupt')
+        print('\n[-] Error: KeyboardInterrupt', e)
     except Exception as e:
-        print('[-] Error:',e)
+        print('[-] Error:', e)
     finally:
         s.logout()
         close_connection(s)
 
 
-def connect_pexpect(host,user,passwd):
-    sshConn='ssh '+user+'@'+host
+def connect_pexpect(host, user, passwd):
+    ssh_connect = 'ssh '+user+'@'+host
     try:
-        child = pexpect.spawn(sshConn,timeout=TIMEOUT)
-        # fout = open('mylog.txt','wb')
+        child = pexpect.spawn(ssh_connect, timeout=TIMEOUT)
+        # fout = open('mylog.txt', 'wb')
         # child.logfile = fout
-        return login_ssh_pexpect(child,user,passwd)
+        return login_ssh_pexpect(child, passwd)
     except Exception as e:
-        print('[-] Error:',e)
+        print('[-] Error:', e)
 
 
 def connect(host, user, passwd):
@@ -155,5 +157,5 @@ def main():
     start_ssh(host, user, passwd)
 
 
-if __name__=="__main__":
+if __name__ == "__main__":
     main()

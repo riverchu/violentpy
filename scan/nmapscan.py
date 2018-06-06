@@ -3,7 +3,7 @@
 __author__ = "riverchu"
 
 import nmap
-from .resolveIP import resolveIP
+from .resolveIP import resolve_ip
 
 
 def ret_info(dic, attr):
@@ -56,7 +56,7 @@ def nmap_scan(tgt_host, tgt_port):
 def ssh_scan_onebyone(tgt_host, tgt_port):
     tgt_host = str(tgt_host)
     tgt_port = str(tgt_port)
-    for host in resolveIP(tgt_host):
+    for host in resolve_ip(tgt_host):
         ret = host_scan(host, tgt_port)
         if host is None or host['state'] != 'open' or host['name'] != 'ssh':
             continue

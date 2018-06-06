@@ -6,17 +6,17 @@ import crypt
 DICTIONARY = '/root/h/data/dictionary/common/top100thousand.txt'
 
 
-def brute_unix_passwd(user,method,salt,passwd,*,dic=DICTIONARY):
+def brute_unix_passwd(method, salt, passwd, *, dic=DICTIONARY):
     try:
         hashinfo = '$' + method + '$'
         hashinfo += salt+'$' if salt else ''
         hashinfo += passwd
 
-        with open(dic,'r') as dicFile:
+        with open(dic, 'r') as dicFile:
             for word in dicFile:
                 word = word.strip('\n').strip('\r')
-                cryptWord = crypt.crypt(word, hashinfo)
-                if cryptWord == hashinfo:
+                crypted_word = crypt.crypt(word, hashinfo)
+                if crypted_word == hashinfo:
                     return word
         return None
     except Exception as e:
@@ -56,36 +56,38 @@ def format_hashinfo(line):
 
 def crack_unix_passwd(line, dic):
     try:
-        formatHashInfo = format_hashinfo(line)
-        if formatHashInfo:
-            ret = brute_unix_passwd(*formatHashInfo, dic=dic)
-            return {'user': formatHashInfo[0], 'password': ret}
+        format_hash_info = format_hashinfo(line)
+        if format_hash_info:
+            ret = brute_unix_passwd(*format_hash_info[1:], dic=dic)
+            return {'user': format_hash_info[0], 'password': ret}
         else:
             return {'user': 'BannedUser', 'password': None}
     except Exception as e:
         print('[-] crack_unix_passwd :', e)
 
 
-def getUnixPasswdFile(filePath=None):
-    if not filePath:
-        filePath = '/etc/shadow'
+def get_unix_passwd_file(file_path=None):
+    if not file_path:
+        file_path = '/etc/shadow'
 
-    with open(filePath,'r') as passFile:
+    with open(file_path, 'r') as passFile:
         for line in passFile.readlines():
-            formatHashInfo = format_hashinfo(line)
-            if not formatHashInfo:
+            format_hash_info = format_hashinfo(line)
+            if not format_hash_info:
                 continue
-            yield formatHashInfo
+            yield format_hash_info
+
 
 def crack():
-    for user,method,salt,passwd in getUnixPasswdFile():
-        #print(user,method,salt,passwd)
-        print('[*]Cracking password for:',user)
-        res = brute_unix_passwd(user,method,salt,passwd)
+    for user, method, salt, passwd in get_unix_passwd_file():
+        # print(user, method, salt, passwd)
+        print('[*]Cracking password for:', user)
+        res = brute_unix_passwd(method, salt, passwd)
         if res:
-            print('[+]Found %s\'s password: %s'%(user,res))
+            print('[+]Found %s\'s password: %s' % (user, res))
         else:
             print('[-]Password not found. ')
+
 
 if __name__ == "__main__":
     crack()

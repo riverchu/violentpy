@@ -38,7 +38,7 @@ def main(host, user, dictionary, *, thread_num=MAX_CONNECTIONS):
 
 
 if __name__ == "__main__":
-    host = '10.108.36.71/24'
+    host = '10.108.36.213'
     user = 'root'
     main(host, user, SSH_DICTIONARY)
     # file_info = read_file()
