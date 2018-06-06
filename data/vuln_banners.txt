@@ -1,8 +1,0 @@
-3Com 3CDaemon FTP Server Version 2.0
-Ability Server 2.34
-CCProxy Telnet Service Ready
-SAMBAR
-Sami FTP Server 2.0.3
-Spipe 1.0
-TelSrv 1.5
-WDaemon 6.8.5
