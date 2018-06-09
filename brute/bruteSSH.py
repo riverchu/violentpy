@@ -43,6 +43,7 @@ def connect_with_passwd(host, user, passwd, release):
             Fails += 1
             time.sleep(2)
     finally:
+        # print(s.after)
         if s:
             s.close()
         if release:
