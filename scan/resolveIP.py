@@ -20,6 +20,8 @@ def int2dot_ip(int_ip):
 
 
 def mask_calc(mask, ipl):
+    if mask == 8:
+        return str(ipl)
     i = 0
     for c in range(mask):
         i = (i << 1) + 1
@@ -27,7 +29,11 @@ def mask_calc(mask, ipl):
 
     i = i & int(ipl)
 
-    return str(i) + '-' + str(i + 2 ** (8 - mask))
+    suffix = 0
+    for c in range(8-mask):
+        suffix = (suffix << 1) + 1
+
+    return str(i) + '-' + str(i + suffix)
 
 
 # 192.168.1.1-255
@@ -158,7 +164,7 @@ def resolve_ip(iprange):
 
 if __name__ == "__main__":
     print("[+] example:192.168.1.1/28")
-    print(list(resolve_ip("192.168.1.1/28")))
+    print(list(resolve_ip("10.108.36.71/23")))
 
 # Question
 # dui yu CIDR model ,resolve to broadcast and subnet name
