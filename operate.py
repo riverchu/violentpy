@@ -4,13 +4,14 @@ __author__ = "riverchu"
 
 import os
 import json
+import time
 from brute import bruteSSH, loginSSH, bruteUnixPasswd
 
 DATA_PATH = '/root/h/data/'
 SSH_DICTIONARY = DATA_PATH+'dictionary/common/online_brute.txt'
 PASS_DICTIONARY = DATA_PATH+'dictionary/common/online_brute.txt'
 CHICKEN_PATH = DATA_PATH+'hData/chicken/'
-CHICKEN_FILE = 'chicken_subnet_10.108.36.txt'
+chicken_info_file = 'chicken_'+time.strftime('%Y-%m-%d_%Hh')+'.txt'
 
 
 # 破解
@@ -48,12 +49,12 @@ def standard_operate_chicken(handle, host):
                 pass_bruteinfo['account'][passwd_info['user']]['password'] = passwd_info['password']
                 pass_bruteinfo['account'][passwd_info['user']]['hash'] = line
 
-        if os.path.exists(CHICKEN_PATH+CHICKEN_FILE):
-            chicken_info = json.load(open(CHICKEN_PATH+CHICKEN_FILE, 'r'))
+        if os.path.exists(CHICKEN_PATH+chicken_info_file):
+            chicken_info = json.load(open(CHICKEN_PATH+chicken_info_file, 'r'))
         else:
             chicken_info = {}
         chicken_info[host] = pass_bruteinfo
-        json.dump(chicken_info, open(CHICKEN_PATH+CHICKEN_FILE, 'w'), indent=4)
+        json.dump(chicken_info, open(CHICKEN_PATH+chicken_info_file, 'w'), indent=4)
 
 
 # brute_info:{'host': '1.2.3.4', 'user': 'root', 'type': 'password', 'key': None}
@@ -77,6 +78,6 @@ def read_files(filename, path=CHICKEN_PATH):
 
 
 if __name__ == '__main__':
-    mess = json.load(open(CHICKEN_PATH + CHICKEN_FILE, 'r'))
+    mess = json.load(open(CHICKEN_PATH + chicken_info_file, 'r'))
     # mess = read_files(CHICKEN_FILE)
     print(json.dumps(mess, indent=4))
