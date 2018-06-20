@@ -6,11 +6,21 @@ from socket import *
 
 
 def dot2int_ip(ip):
+    """点分法ip转为int形式ip
+
+    :param ip:[1,2,3,4]
+    :return:
+    """
     ip = (int(ip[0]) << 24) + (int(ip[1]) << 16) + (int(ip[2]) << 8) + int(ip[3])
     return ip
 
 
 def int2dot_ip(int_ip):
+    """int形式ip转为点分法ip
+
+    :param int_ip:ip的整数形式
+    :return:
+    """
     ip = [0, 0, 0, 0]
     ip[0] = int_ip >> 24
     ip[1] = (int_ip >> 16) & 255
@@ -20,6 +30,12 @@ def int2dot_ip(int_ip):
 
 
 def mask_calc(mask, ipl):
+    """计算掩码对对应ip范围
+
+    :param mask:掩码长度
+    :param ipl:ip点分的一位
+    :return: 对应整数范围
+    """
     if mask == 8:
         return str(ipl)
     i = 0
@@ -36,12 +52,16 @@ def mask_calc(mask, ipl):
     return str(i) + '-' + str(i + suffix)
 
 
-# 192.168.1.1-255
-def resolve_range_ip(ipl):
+def resolve_range_ip(ip):
+    """解析范围型ip
+
+    :param ipl: sample:192.168.1.1-255
+    :return: (初始ip，结束ip)
+    """
     maxip = [0, 0, 0, 0]
     minip = [0, 0, 0, 0]
 
-    ip = ipl.split('.')
+    ip = ip.split('.')
 
     for x in range(4):
         if ip[x].find('-') != -1:
@@ -55,16 +75,24 @@ def resolve_range_ip(ipl):
     return dot2int_ip(minip), dot2int_ip(maxip)
 
 
-# 192.168.1.1-192.168.1.255
 def resolve_range_ipl(ipl):
+    """解析对应范围ip
+
+    :param ipl: 192.168.1.1-192.168.1.255
+    :return: (初始ip，结束ip)
+    """
     min_ip, max_ip = ipl.split('-')
     min_ip = min_ip.split('.')
     max_ip = max_ip.split('.')
     return dot2int_ip(min_ip), dot2int_ip(max_ip)
 
 
-# 192.168.1.1/24
 def resolve_cidr(ipl):
+    """解析CIDR模式ip
+
+    :param ipl: 192.168.1.1/24
+    :return: (初始ip，结束ip)
+    """
     ip, mask = ipl.split('/')
 
     ip = ip.split('.')
@@ -88,6 +116,11 @@ def resolve_cidr(ipl):
 
 
 def is_ip(string):
+    """判断是否为ip
+
+    :param string:
+    :return:
+    """
     try:
         if string.find('/') != -1:
             ip, mask = string.split('/')
@@ -132,6 +165,11 @@ def is_ip(string):
 
 
 def resolve_host(tgt_host):
+    """解析主机名
+
+    :param tgt_host: 主机名 ip或域名
+    :return:
+    """
     try:
         tgt_ip = gethostbyname(tgt_host)
     except Exception as e:
@@ -146,12 +184,17 @@ def resolve_host(tgt_host):
 
 
 def resolve_ip(iprange):
+    """解析ip
+
+    :param iprange:
+    :return: 迭代器返回ip
+    """
     start, end = 0, 0
     ip_type = is_ip(iprange)
     if ip_type == 1:
         start, end = resolve_cidr(iprange)
     elif ip_type == 2:
-        start, end = resolve_range_ipl(iprange)
+        start, end = resolve_range_ip(iprange)
     elif ip_type == 3:
         start, end = resolve_range_ipl(iprange)
     else:

@@ -18,6 +18,12 @@ THREADPOOL = BoundedSemaphore(value=MAX_THREAD)
 
 
 def check_vulns(banner, filename):
+    """根据banner判断是否存在漏洞
+
+    :param banner: banner内容
+    :param filename: 存储带有漏洞的banner信息的文件
+    :return:
+    """
     f = open(filename, 'r')
     for line in f.readlines():
         if line.strip('\n') in banner:
@@ -25,6 +31,12 @@ def check_vulns(banner, filename):
 
 
 def ret_banner(tgt_host, tgt_port):
+    """返回banner
+
+    :param tgt_host: 目标主机
+    :param tgt_port: 目标端口
+    :return: banner内容
+    """
     banner = None
     try:
         s = socket(AF_INET, SOCK_STREAM)
@@ -41,6 +53,14 @@ def ret_banner(tgt_host, tgt_port):
 
 
 def output_result(tgt_host, tgt_port, string, type_str):
+    """输出扫描结果
+
+    :param tgt_host:目标主机
+    :param tgt_port:目标端口
+    :param string:内容
+    :param type_str:内容对应类型（banner或state）
+    :return:
+    """
     SCREENLOCK.acquire()
     if type_str == 'banner' and string:
         print("[+] " + tgt_host + " : %d/tcp open" % tgt_port)
@@ -54,6 +74,12 @@ def output_result(tgt_host, tgt_port, string, type_str):
 
 
 def port_scan(tgt_host, tgt_ports):
+    """多端口扫描
+
+    :param tgt_host: 目标主机
+    :param tgt_ports: 目标端口
+    :return:
+    """
     setdefaulttimeout(1)
     for tgt_port in tgt_ports:
         tgt_port = int(tgt_port.strip())
@@ -66,6 +92,12 @@ def port_scan(tgt_host, tgt_ports):
 
 
 def host_scan(tgt_host, tgt_ports):
+    """多主机扫描
+
+    :param tgt_host: 目标主机
+    :param tgt_ports: 目标端口
+    :return:
+    """
     if is_ip(tgt_host):
         threads = []
         for tgtIP in resolve_ip(tgt_host):
@@ -88,6 +120,10 @@ def host_scan(tgt_host, tgt_ports):
 
 
 def cscan():
+    """diy扫描器入口
+
+    :return:
+    """
     parser = optparse.OptionParser('usage %prog ' + '-H <target host> -p <target port>')
     parser.add_option('-H', dest='tgtHost', type='string', help='specify target host')
     parser.add_option('-p', dest='tgtPort', type='string', help='specify target port')
