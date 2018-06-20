@@ -86,7 +86,7 @@ def standard_operate_chicken(handle, host):
 def operate_chicken(brute_info):
     """登录肉鸡，并操作
 
-    :param brute_info:登录信息
+    :param brute_info:登录信息{'host': '1.2.3.4', 'user': 'root', 'type': 'password', 'key': None}
     :return:
     """
     handle = loginSSH.ret_login_handle(brute_info)

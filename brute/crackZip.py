@@ -6,16 +6,22 @@ import zipfile
 import optparse
 from threading import *
 
-DIC_PATH = '../data/'
 EXTRACT_PATH = './extract_here'
 
 PASSWD = ''
+DICTIONARY = '/root/h/data/dictionary/common/top100thousand.txt'
 
 MAX_THREAD = 10
 THREADPOOL = BoundedSemaphore(value=MAX_THREAD)
 
 
 def extract_file(zfile, passwd):
+    """解压文件
+
+    :param zfile:解压文件名
+    :param passwd:解压密码
+    :return:
+    """
     global PASSWD
     try:
         zfile.extractall(path=EXTRACT_PATH, pwd=passwd)
@@ -26,7 +32,13 @@ def extract_file(zfile, passwd):
         THREADPOOL.release()
 
 
-def crack_zip(file_path='evil.zip', dic_name="dictionary.txt"):
+def crack_zip(file_path='evil.zip', dic_name=DICTIONARY):
+    """破解zip
+
+    :param file_path:zip文件路径
+    :param dic_name:字典文件名
+    :return:
+    """
     parser = optparse.OptionParser("usage%prog " + "-f <zipfile> -d <dictionary>")
     parser.add_option('-f', dest='zipFileName', type='string', help='specify zip file')
     parser.add_option('-d', dest='dictionaryName', type='string', help='specify dictionary file')
@@ -40,7 +52,7 @@ def crack_zip(file_path='evil.zip', dic_name="dictionary.txt"):
 
     global PASSWD
     zfile = zipfile.ZipFile(file_path)
-    pass_file = open(DIC_PATH + dic_name)
+    pass_file = open(dic_name, 'r')
     threads = []
 
     for line in pass_file.readlines():
@@ -50,6 +62,7 @@ def crack_zip(file_path='evil.zip', dic_name="dictionary.txt"):
         threads.append(t)
         t.setDaemon(True)
         t.start()
+    pass_file.close()
 
     for t in threads:
         if PASSWD is True:
