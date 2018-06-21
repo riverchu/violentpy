@@ -46,7 +46,7 @@ def mask_calc(mask, ipl):
     i = i & int(ipl)
 
     suffix = 0
-    for c in range(8-mask):
+    for c in range(8 - mask):
         suffix = (suffix << 1) + 1
 
     return str(i) + '-' + str(i + suffix)
@@ -55,7 +55,7 @@ def mask_calc(mask, ipl):
 def resolve_range_ip(ip):
     """解析范围型ip
 
-    :param ipl: sample:192.168.1.1-255
+    :param ip: sample:192.168.1.1-255
     :return: (初始ip，结束ip)
     """
     maxip = [0, 0, 0, 0]
@@ -98,7 +98,10 @@ def resolve_cidr(ipl):
     ip = ip.split('.')
     mask = int(mask)
 
-    if mask <= 8:
+    if mask < 0:
+        print('[-]Input wrong ip range.')
+        exit(0)
+    elif mask <= 8:
         ranip = mask_calc(mask, ip[0])
         return resolve_range_ip(ranip + '.0-255.0-255.0-255')
     elif mask <= 16:
@@ -110,7 +113,7 @@ def resolve_cidr(ipl):
     elif mask <= 30:
         ranip = mask_calc(mask - 24, ip[3])
         return resolve_range_ip(ip[0] + '.' + ip[1] + '.' + ip[2] + '.' + ranip)
-    else:
+    elif mask > 30:
         print('[-]Input wrong ip range.')
         exit(0)
 
