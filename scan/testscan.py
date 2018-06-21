@@ -77,4 +77,8 @@ class TestScan(unittest.TestCase):
         pass
 
     def test_resolveip(self):
-        pass
+        self.assertEqual(list(resolve_ip('192.168.0.0')), ['192.168.0.0'])
+        self.assertEqual(list(resolve_ip('192.168.0.0/30')),
+                         ['192.168.0.0', '192.168.0.1', '192.168.0.2', '192.168.0.3', ])
+        self.assertEqual(list(resolve_ip('192.168.0.0-1')), ['192.168.0.0', '192.168.0.1'])
+        self.assertEqual(list(resolve_ip('192.168.0.0-192.168.0.1')), ['192.168.0.0', '192.168.0.1'])
