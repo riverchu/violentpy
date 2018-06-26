@@ -186,6 +186,7 @@ def brute_ssh(host, user, *, pass_key_dir=None, passwd_file=None, max_connection
     if max_connection != 10 and max_connection is not None and max_connection != '':
         MAX_CONNECTION = int(max_connection)
         CONNECTION_LOCK = BoundedSemaphore(value=MAX_CONNECTION)
+
     ret = {'host': host, 'user': user, 'ssh_type': None, 'key': None}
     if pass_key_dir:
         ssh_key(host, user, pass_key_dir)

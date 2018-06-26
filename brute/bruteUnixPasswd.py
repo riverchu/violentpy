@@ -17,14 +17,13 @@ def brute_unix_passwd(method, salt, passwd_hash, *, dic=DICTIONARY):
     """
     try:
         hashinfo = '$' + method + '$'
-        hashinfo += salt + '$' if salt else ''
-        hashinfo += passwd_hash
+        hashinfo += salt if salt else ''
 
         with open(dic, 'r') as dicFile:
             for word in dicFile:
                 word = word.strip('\n').strip('\r')
                 crypted_word = crypt.crypt(word, hashinfo)
-                if crypted_word == hashinfo:
+                if crypted_word == hashinfo + '$' + passwd_hash:
                     return word
         return None
     except Exception as e:
@@ -100,6 +99,59 @@ def get_unix_passwd_file(file_path=None):
             if not format_hash_info:
                 continue
             yield format_hash_info
+
+
+def crack_bot_unix_passwd(ip, passwd_file_info, dic):
+    """破解bot主机密码文件
+
+    :param ip: 主机ip
+    :param passwd_file_info: 密码文件内容
+    :param dic: 密钥字典
+    :param file: 存储文件目录
+    :return:
+    """
+    if passwd_file_info is None or passwd_file_info == '':
+        return None
+
+    # 记录密码文件
+    pass_bruteinfo = dict()
+    pass_bruteinfo['ip'] = ip
+    pass_bruteinfo['account'] = {}
+    if passwd_file_info:
+        # 破解密码文件内密码
+        for line in passwd_file_info.split('\n'):
+            if len(line) < 4:
+                continue
+            passwd_info = crack_unix_passwd(line, dic=dic)
+            if passwd_info['user'] != 'BannedUser':
+                pass_bruteinfo['account'][passwd_info['user']] = {}
+                pass_bruteinfo['account'][passwd_info['user']]['password'] = passwd_info['password']
+                pass_bruteinfo['account'][passwd_info['user']]['hash'] = line
+
+    return pass_bruteinfo
+
+
+def update_passwd_json(info, dic):
+    """update password file
+
+    :param info:
+    :param dic:
+    :return:
+    """
+    for host in info:
+        print('[*] updating ' + host)
+        host_info = info[host]
+        account_info = host_info['account']
+        for user in account_info:
+            user_info = account_info[user]
+            if user_info['password'] is None:
+                passwd_info = crack_unix_passwd(user_info['hash'], dic)
+                user_info['password'] = passwd_info['password']
+            elif user_info['hash'] != crypt.crypt(user_info['password'], user_info['hash']):
+                passwd_info = crack_unix_passwd(user_info['hash'], dic)
+                user_info['password'] = passwd_info['password']
+
+    return info
 
 
 def crack():
