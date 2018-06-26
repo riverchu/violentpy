@@ -2,6 +2,7 @@
 # coding=utf-8
 __author__ = "riverchu"
 
+import json
 import optparse
 import pexpect
 from pexpect import pxssh
@@ -14,6 +15,13 @@ class BotClient:
     TIMEOUT = 5
 
     def __init__(self, host, user, *, ssh_type='password', key=None):
+        """
+
+        :param host:
+        :param user:
+        :param ssh_type:
+        :param key:
+        """
         self.host = host
         self.user = user
 
@@ -26,7 +34,7 @@ class BotClient:
         self.session = None
         self.connected = False
 
-    def close_connection(self):
+    def close(self):
         """关闭连接"""
         self.session.close()
         self.connected = not self.session.closed
@@ -83,7 +91,7 @@ class BotClient:
         except Exception as e:
             print('[-] Error:', e)
         finally:
-            self.close_connection()
+            self.close()
 
     def connect_pexpect(self, host, user, passwd):
         """pexpect 连接
@@ -127,7 +135,7 @@ class BotClient:
             print('\n[-] Error:', e)
         finally:
             self.session.logout()
-            self.close_connection()
+            self.close()
 
     def connect(self, host=None, user=None, passwd=None):
         """pxssh密码连接ssh
@@ -166,6 +174,70 @@ class BotClient:
 
         return self.connected
 
+    def __str__(self):
+        host_str = '[+]host: ' + self.host + '\n'
+        user_str = '[+]user: ' + self.user + '\n'
+        type_str = '[+]type: ' + self.ssh_type + '\n'
+        key_str = '[+]password: ' + self.passwd + '\n'
+
+        return host_str + user_str + type_str + key_str + '\n'
+
+
+class BotNet:
+    def __init__(self):
+        self.botnet = []
+
+    def add_bot(self, host, user, *, ssh_type='password', key=None):
+        bot = BotClient(host=host, user=user, ssh_type=ssh_type, key=key)
+        self.botnet.append(bot)
+
+    def net_connect(self):
+        for bot in self.botnet:
+            if bot.connected is False:
+                bot.connect()
+            print('Connect ', bot.host, ' ', bot.connected)
+
+    def net_close(self):
+        for bot in self.botnet:
+            if bot.connected is True:
+                bot.close()
+            print('Connect ', bot.host, ' ', bot.connected)
+
+    def bot_connect(self):
+        pass
+
+    def bot_close(self):
+        pass
+
+    def operate_net(self):
+        pass
+
+    def operate_onebyone(self):
+        for bot in self.botnet:
+            if bot.connected is True:
+                self.opreate_bot(bot)
+
+    def opreate_bot(self, bot):
+        print(bot.send_command('pwd'))
+
+    def getbot_by_file(self, file):
+        with open(file, 'r') as botfile:
+            botnet_info = json.load(botfile)
+            for bot in botnet_info:
+                host = botnet_info[bot]['ip']
+                account = botnet_info[bot]['account']
+                user = 'root' if 'root' in account else list(account.keys())[0]
+                passwd = botnet_info[bot]['account'][user]['password']
+
+                self.add_bot(host=host, user=user, key=passwd)
+
+    def __str__(self):
+        string = '[+]Bot info:'+'\n'
+        for bot in self.botnet:
+            string += str(bot)
+
+        return string
+
 
 def main():
     """单独调用时的入口函数"""
@@ -186,14 +258,24 @@ def main():
     client.connect()
     # print(client.connected)
     client.com_ssh_realtime()
-    client.close_connection()
+    client.close()
 
 
 if __name__ == "__main__":
+    net = BotNet()
+    # net.getbot_by_file('/root/h/data/hData/bot/10.108.101mask24.txt')
+    net.add_bot(**{'host': '10.108.101.111', 'user': 'root', 'key': '123456'})
+    net.add_bot(**{'host': '10.108.103.215', 'user': 'root', 'key': '123456789'})
+    print(net)
+    # net.net_connect()
+    # net.operate_onebyone()
+    # net.net_close()
+
     # client = BotClient(**{'host': '10.108.101.111', 'user': 'root', 'key': '123456'})
     # client.connect()
     # print(client.connected)
     # client.com_ssh_realtime()
-    # client.close_connection()
+    # client.close()
     # print(client.connected)
-    main()
+
+    # main()

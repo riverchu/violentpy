@@ -6,8 +6,8 @@ import os
 import json
 import global_var as gv
 import threading
-import time
-from brute import bruteSSH, botNet, bruteUnixPasswd
+from brute import bruteSSH, bruteUnixPasswd
+from bot import botNet
 
 
 def brute(host, user, dictionary, *, connections):
@@ -69,7 +69,7 @@ def standard_operate_bot(bot, host):
     # 破解unix密码
     passwd_file_info = get_unix_passwdfile(bot)
     t = threading.Thread(target=crack_bot_unix_passwd, args=(host, passwd_file_info))
-    bot.close_connection()
+    bot.close()
     t.start()
     t.join()
 
