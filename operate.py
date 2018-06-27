@@ -72,6 +72,16 @@ def read_info(filename, path=gv.BOT_PATH):
 
 def combine_info(file1, file2, combined_file, input_path1=gv.BOT_PATH, input_path2=gv.BOT_PATH,
                  output_path=gv.BOT_PATH):
+    """combine files
+
+    :param file1:
+    :param file2:
+    :param combined_file:
+    :param input_path1:
+    :param input_path2:
+    :param output_path:
+    :return:
+    """
     info1 = None
     info2 = None
     timestamp1 = 0
@@ -89,14 +99,14 @@ def combine_info(file1, file2, combined_file, input_path1=gv.BOT_PATH, input_pat
         print('[-] Error: file:' + file1 + ' does not exist.')
         exit(-1)
 
-    output_info = None
     if timestamp1 > timestamp2:
         info2.update(info1)
-        info = info2
+        output_info = info2
     else:
         info1.update(info2)
-        info = info1
-    json.dump(info, open(output_path + combined_file, 'w'), indent=4)
+        output_info = info1
+
+    json.dump(output_info, open(output_path + combined_file, 'w'), indent=4)
 
 
 if __name__ == '__main__':
