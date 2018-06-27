@@ -5,11 +5,12 @@ __author__ = "riverchu"
 import json
 import optparse
 import threading
+
 import pexpect
 from pexpect import pxssh
 
-import global_var as gv
 import brute.bruteUnixPasswd as bruteUnixPasswd
+import global_var as gv
 
 
 class BotClient:
@@ -268,6 +269,8 @@ class BotNet:
             for bot in botnet_info:
                 host = botnet_info[bot]['ip']
                 account = botnet_info[bot]['account']
+                if account == {}:
+                    continue
                 user = 'root' if 'root' in account else list(account.keys())[0]
                 passwd = botnet_info[bot]['account'][user]['password']
 
@@ -298,9 +301,9 @@ def main():
 
 if __name__ == "__main__":
     net = BotNet()
-    # net.getbot_by_file('/root/h/data/hData/bot/10.108.101mask24.txt')
-    net.add_bot(**{'host': '10.108.101.111', 'user': 'root', 'key': '123456'})
-    net.add_bot(**{'host': '10.108.103.215', 'user': 'root', 'key': '123456789'})
+    net.getbot_by_file('/root/h/data/hData/bot/10.108.36.71mask16.txt')
+    # net.add_bot(**{'host': '10.108.101.111', 'user': 'root', 'key': '123456'})
+    # net.add_bot(**{'host': '10.108.103.215', 'user': 'root', 'key': '123456789'})
     print(net)
     # net.net_connect()
     # net.operate_onebyone()
