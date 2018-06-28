@@ -6,18 +6,24 @@ import crypt
 DICTIONARY = '/root/h/data/dictionary/common/top100thousand.txt'
 
 
-def brute_unix_passwd(method, salt, passwd_hash, *, dic=DICTIONARY):
+def brute_unix_passwd(method, salt, passwd_hash, *, dic=DICTIONARY, name=None):
     """单条unix密码信息爆破
 
     :param method:hash方式
     :param salt:salt值
     :param passwd_hash:密码hash值
     :param dic:密码字典路径
+    :param name:
     :return: 破解结果 password明文信息
     """
     try:
         hashinfo = '$' + method + '$'
         hashinfo += salt if salt else ''
+
+        if name is not None:
+            crypted_word = crypt.crypt(name, hashinfo)
+            if crypted_word == hashinfo + '$' + passwd_hash:
+                return name
 
         with open(dic, 'r') as dicFile:
             for word in dicFile:
@@ -28,6 +34,28 @@ def brute_unix_passwd(method, salt, passwd_hash, *, dic=DICTIONARY):
         return None
     except Exception as e:
         print('[-] brute_unix_passwd :', e)
+
+
+def test_passwd(line, passwd):
+    """测试passwd是否为相应密码
+
+    :param line:
+    :param passwd:
+    :return:
+    """
+    try:
+        format_hash_info = format_hashinfo(line)
+        if format_hash_info:
+            hashinfo = '$' + format_hash_info[1] + '$'
+            hashinfo += format_hash_info[2] if format_hash_info[2] else ''
+
+            crypted_word = crypt.crypt(passwd, hashinfo)
+            if crypted_word == hashinfo + '$' + format_hash_info[3]:
+                return True
+            else:
+                return False
+    except Exception as e:
+        print('[-] crack_unix_passwd :', e)
 
 
 def format_hashinfo(line):
@@ -76,7 +104,7 @@ def crack_unix_passwd(line, dic):
     try:
         format_hash_info = format_hashinfo(line)
         if format_hash_info:
-            ret = brute_unix_passwd(*format_hash_info[1:], dic=dic)
+            ret = brute_unix_passwd(*format_hash_info[1:], dic=dic, name=format_hash_info[0])
             return {'user': format_hash_info[0], 'password': ret}
         else:
             return {'user': 'BannedUser', 'password': None}
@@ -147,7 +175,7 @@ def update_passwd_json(info, dic):
             if user_info['password'] is None:
                 passwd_info = crack_unix_passwd(user_info['hash'], dic)
                 user_info['password'] = passwd_info['password']
-            elif user_info['hash'] != crypt.crypt(user_info['password'], user_info['hash']):
+            elif test_passwd(user_info['hash'], user_info['password']) is False:
                 passwd_info = crack_unix_passwd(user_info['hash'], dic)
                 user_info['password'] = passwd_info['password']
 
