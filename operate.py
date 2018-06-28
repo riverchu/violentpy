@@ -23,6 +23,7 @@ def operate_bot(brute_info):
     bot.standard_operate()
     print('[*] Completed operate.')
     save_info(mode='crack_unix_passwd', filename=gv.BOT_PATH + gv.bot_info_file, info=bot.password_json, ip=bot.host)
+    print('[*] Completed save.')
 
 
 def save_info(mode, filename, info, **kw):
@@ -39,6 +40,10 @@ def save_info(mode, filename, info, **kw):
             json.dump(info, logfile)
             logfile.write('\n')
     elif mode == 'crack_unix_passwd':
+        if info in ['', None]:
+            print('[-] Save nothing')
+            return
+
         # 需要加锁
         if os.path.exists(filename):
             bot_info = json.load(open(filename, 'r'))
