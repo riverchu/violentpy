@@ -147,7 +147,7 @@ def crack_bot_unix_passwd(ip, passwd_file_info, dic):
     pass_bruteinfo['account'] = {}
     if passwd_file_info:
         # 破解密码文件内密码
-        for line in passwd_file_info.split('\n'):
+        for line in passwd_file_info.split('\r\n'):
             if len(line) < 4:
                 continue
             passwd_info = crack_unix_passwd(line, dic=dic)

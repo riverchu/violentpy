@@ -131,11 +131,18 @@ class BotClient:
         """pxssh 发送命令，返回信息"""
         self.session.sendline(cmd)
         self.session.prompt()
-        ret = self.session.before.split('\n', 1)[1].strip().strip('\r')
+        ret = ''
+        response = self.session.before  # .split('\n', 1)[1].strip().strip('\r')
+        if '\x07' in response:
+            response = response.split('\r\n')[1:-2]
+            for item in response:
+                ret += item.split('\x07')[-1] + '\r\n'
+        else:
+            ret = response
         # ret = str(s.before, encoding="utf-8").split('\n', 1)[1].strip()#[len(cmd):]
         return ret
 
-    def com_ssh_realtime(self, command='cat /etc/shadow|grep root'):
+    def com_ssh_realtime(self, command='cat /etc/shadow'):
         """pxssh ssh发送命令，实时回应"""
         try:
             while command != "exit":
