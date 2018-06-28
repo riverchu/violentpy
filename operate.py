@@ -17,8 +17,11 @@ def operate_bot(brute_info):
     """
     brute_info.pop('time')
     bot = botNet.BotClient(**brute_info)
+    print('[*] Connect again.')
     bot.connect()
+    print('[*] Connect result:', bot.connected)
     bot.standard_operate()
+    print('[*] Completed operate.')
     save_info(mode='crack_unix_passwd', filename=gv.BOT_PATH + gv.bot_info_file, info=bot.password_json, ip=bot.host)
 
 
